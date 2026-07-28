@@ -211,6 +211,13 @@ async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
                 return;
             }
             if (res.ok) {
+                // GET that returns HTML/static (e.g. Vercel index.html) is a boot failure.
+                if (method === 'get' && !currentPage) {
+                    options.onError?.({
+                        message: 'Server did not return an Inertia page.',
+                    });
+                    return;
+                }
                 // JSON endpoint hit through router (e.g. typing ping): treat as success.
                 if (currentPage) options.onSuccess?.(currentPage);
             } else {
@@ -722,12 +729,15 @@ export async function createInertiaApp(
             Component: React.ComponentType<Record<string, unknown>>;
             page: Page;
         } | null>(null);
+        const [bootError, setBootError] = useState(false);
         const resolveGen = useRef(0);
 
         const load = () => {
+            setBootError(false);
             void visit(window.location.pathname + window.location.search, {
                 replace: true,
                 preserveScroll: true,
+                onError: () => setBootError(true),
             });
         };
 
@@ -761,7 +771,42 @@ export async function createInertiaApp(
         }, [page, page?.component, page?.url, page?.version]);
 
         if (!view) {
-            return null;
+            if (!bootError) return null;
+            return (
+                <div
+                    style={{
+                        minHeight: '100vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 12,
+                        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                        padding: 24,
+                        textAlign: 'center',
+                    }}
+                >
+                    <p style={{ color: '#71717a', fontSize: 14, margin: 0 }}>
+                        Could not load the app. Check that the API is up, then
+                        retry.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={load}
+                        style={{
+                            padding: '8px 16px',
+                            borderRadius: 8,
+                            border: '1px solid #d4d4d8',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            fontSize: 14,
+                        }}
+                    >
+                        Retry
+                    </button>
+                </div>
+            );
         }
 
         const { Component, page: viewPage } = view;
