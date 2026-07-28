@@ -682,72 +682,6 @@ interface CreateAppOptions {
     render?: unknown;
 }
 
-function Splash({ error, retry }: { error: boolean; retry: () => void }) {
-    return (
-        <div
-            style={{
-                minHeight: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 16,
-                fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-            }}
-        >
-            <img
-                src="/homemart-logo.png"
-                alt="Home Mart"
-                style={{ width: 64, height: 64 }}
-            />
-            {error ? (
-                <>
-                    <p
-                        style={{
-                            color: '#71717a',
-                            fontSize: 14,
-                            padding: '0 24px',
-                            textAlign: 'center',
-                        }}
-                    >
-                        Could not reach the server. It may be waking up — please
-                        try again in a moment.
-                    </p>
-                    <button
-                        onClick={retry}
-                        style={{
-                            padding: '8px 20px',
-                            borderRadius: 10,
-                            border: '1px solid #d4d4d8',
-                            background: 'transparent',
-                            cursor: 'pointer',
-                            fontWeight: 600,
-                            fontSize: 14,
-                            color: 'inherit',
-                        }}
-                    >
-                        Retry
-                    </button>
-                </>
-            ) : (
-                <div
-                    style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        border: '3px solid #e4e4e7',
-                        borderTopColor: '#18181b',
-                        animation: 'hm-spin 0.8s linear infinite',
-                    }}
-                />
-            )}
-            <style>
-                {'@keyframes hm-spin { to { transform: rotate(360deg); } }'}
-            </style>
-        </div>
-    );
-}
-
 export async function createInertiaApp(
     options: CreateAppOptions,
 ): Promise<void> {
@@ -788,15 +722,12 @@ export async function createInertiaApp(
             Component: React.ComponentType<Record<string, unknown>>;
             page: Page;
         } | null>(null);
-        const [bootError, setBootError] = useState(false);
         const resolveGen = useRef(0);
 
         const load = () => {
-            setBootError(false);
             void visit(window.location.pathname + window.location.search, {
                 replace: true,
                 preserveScroll: true,
-                onError: () => setBootError(true),
             });
         };
 
@@ -830,7 +761,7 @@ export async function createInertiaApp(
         }, [page, page?.component, page?.url, page?.version]);
 
         if (!view) {
-            return <Splash error={bootError} retry={load} />;
+            return null;
         }
 
         const { Component, page: viewPage } = view;
