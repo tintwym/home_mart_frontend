@@ -15,7 +15,7 @@ to `resources/js/lib/inertia`, a thin client that fetches
 2. In this folder:
 
 ```bash
-cp .env.example .env   # leave VITE_API_URL empty; add VITE_FIREBASE_* for Google/Apple
+cp .env.example .env   # add VITE_FIREBASE_* for Google/Apple
 npm install
 npm run dev            # http://localhost:3000
 ```
@@ -28,15 +28,13 @@ stays same-origin.
 1. Import the `home_mart_frontend` folder as a Vercel project.
 2. Edit `vercel.json` and replace every
    `https://YOUR-RENDER-SERVICE.onrender.com` with your real Render URL.
-3. Leave `VITE_API_URL` empty (rewrites keep requests same-origin).
-4. Set Firebase web config env vars (below) if using Google/Apple sign-in.
-5. Deploy.
+3. Set Firebase web config env vars (below) if using Google/Apple sign-in.
+4. Deploy.
 
 ## Environment
 
 | Variable | Purpose |
 |---|---|
-| `VITE_API_URL` | Optional absolute API origin. Leave empty when using Vite proxy / Vercel rewrites. |
 | `VITE_APP_NAME` | Browser title prefix (default `Home Mart`). |
 | `VITE_FIREBASE_API_KEY` | Firebase web API key |
 | `VITE_FIREBASE_AUTH_DOMAIN` | e.g. `your-project.firebaseapp.com` |
