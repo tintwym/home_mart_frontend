@@ -26,8 +26,8 @@ stays same-origin.
 ## Vercel deploy
 
 1. Import the `home_mart_frontend` folder as a Vercel project.
-2. Edit `vercel.json` and replace every
-   `https://YOUR-RENDER-SERVICE.onrender.com` with your real Render URL.
+2. Edit `vercel.json` and set every rewrite destination to your Render API
+   (`https://home-mart-backend.onrender.com`).
 3. Set Firebase web config env vars (below) if using Google/Apple sign-in.
 4. Deploy.
 
