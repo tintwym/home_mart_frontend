@@ -1,0 +1,69 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "header", "key": "x-inertia" }],
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/api/:path*"
+    },
+    {
+      "source": "/mapi/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/mapi/:path*"
+    },
+    {
+      "source": "/storage/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/storage/:path*"
+    },
+    {
+      "source": "/cart/json",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/cart/json"
+    },
+    {
+      "source": "/passkeys/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/passkeys/:path*"
+    },
+    {
+      "source": "/settings/passkeys/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/settings/passkeys/:path*"
+    },
+    {
+      "source": "/settings/payment/setup-intent",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/settings/payment/setup-intent"
+    },
+    {
+      "source": "/user/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/user/:path*"
+    },
+    {
+      "source": "/notifications",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/notifications"
+    },
+    {
+      "source": "/notifications/:path*",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/notifications/:path*"
+    },
+    {
+      "source": "/chat/:id/messages/since",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/chat/:id/messages/since"
+    },
+    {
+      "source": "/chat/:id/typing",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/chat/:id/typing"
+    },
+    {
+      "source": "/sanctum/csrf-cookie",
+      "destination": "https://YOUR-RENDER-SERVICE.onrender.com/sanctum/csrf-cookie"
+    },
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
