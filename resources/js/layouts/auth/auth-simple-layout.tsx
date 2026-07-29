@@ -11,7 +11,7 @@ export default function AuthSimpleLayout({
     description,
 }: AuthLayoutProps) {
     return (
-        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-slate-50/50 p-4 sm:p-6 md:p-10 dark:bg-slate-950/60">
+        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-background p-4 sm:p-6 md:p-10">
             {/* Mock Blurred Homepage/Dashboard Background underneath the glass overlay */}
             <div className="pointer-events-none absolute inset-0 -z-30 flex scale-105 flex-col overflow-hidden opacity-40 blur-[12px] select-none dark:opacity-20">
                 {/* Mock Header */}
@@ -24,7 +24,7 @@ export default function AuthSimpleLayout({
                     </div>
                 </div>
                 {/* Mock Hero Banner */}
-                <div className="m-8 h-48 rounded-2xl bg-gradient-to-r from-primary/30 via-emerald-500/15 to-primary/20" />
+                <div className="m-8 h-48 rounded-2xl bg-linear-to-r from-primary/35 via-secondary/40 to-accent/35" />
                 {/* Mock Grid of Listing Cards */}
                 <div className="grid grid-cols-2 gap-6 px-8 py-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                     {Array.from({ length: 10 }).map((_, i) => (
@@ -42,8 +42,9 @@ export default function AuthSimpleLayout({
 
             {/* Ambient Background Glows */}
             <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden select-none">
-                <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] rounded-full bg-primary/20 blur-[120px] dark:bg-primary/10" />
-                <div className="absolute -right-[10%] -bottom-[10%] h-[50%] w-[50%] rounded-full bg-emerald-500/20 blur-[120px] dark:bg-emerald-500/10" />
+                <div className="absolute -top-[10%] -left-[10%] h-[50%] w-[50%] rounded-full bg-primary/25 blur-[120px] dark:bg-primary/15" />
+                <div className="absolute top-[20%] -right-[5%] h-[40%] w-[40%] rounded-full bg-secondary/35 blur-[110px] dark:bg-secondary/20" />
+                <div className="absolute -right-[10%] -bottom-[10%] h-[50%] w-[50%] rounded-full bg-accent/30 blur-[120px] dark:bg-accent/15" />
             </div>
 
             {/* Transparent backdrop close area (clicking outside the modal navigates back to dashboard) */}
@@ -57,7 +58,7 @@ export default function AuthSimpleLayout({
                 initial={{ opacity: 0, scale: 0.96, y: 12 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                className="relative w-full max-w-[420px] rounded-2xl border border-white/20 bg-white/90 p-6 text-foreground shadow-2xl backdrop-blur-md sm:p-8 md:p-10 dark:border-slate-800/80 dark:bg-slate-900/95"
+                className="relative w-full max-w-[420px] rounded-2xl border border-primary/20 bg-card/92 p-6 text-foreground shadow-xl backdrop-blur-md sm:p-8 md:p-10 dark:border-primary/25 dark:bg-card/95"
             >
                 {/* Close Button */}
                 <Link

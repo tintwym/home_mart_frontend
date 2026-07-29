@@ -189,9 +189,9 @@ export function ListingCard({ listing }: ListingCardProps) {
     };
 
     return (
-        <article className="group/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:border-zinc-800/80 dark:bg-zinc-900/40">
+        <article className="group/card relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-md dark:border-primary/20 dark:bg-card">
             {/* Product image with sleek premium interactions */}
-            <div className="relative aspect-square w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950/20">
+            <div className="relative aspect-square w-full overflow-hidden bg-muted/60 dark:bg-muted/40">
                 <Link
                     href={`/listings/${listing.id}`}
                     className="block size-full"

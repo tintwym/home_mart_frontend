@@ -208,10 +208,11 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
     return (
         <>
             <div
-                className="sticky top-0 z-50 border-b border-sidebar-border/80 bg-background pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)]"
+                className="sticky top-0 z-50 border-b border-primary/15 pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] shadow-[0_1px_0_0_color-mix(in_oklch,var(--primary)_12%,transparent)] backdrop-blur-md"
                 style={{
                     paddingTop: 'env(safe-area-inset-top)',
                     paddingBottom: 0,
+                    backgroundColor: 'var(--header-tint)',
                 }}
             >
                 {/* Row 1: Logo left, search center, icons right — from iPad mini (md) up same as desktop */}
@@ -245,7 +246,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             onSubmit={searchFormSubmit}
                             className="relative w-full max-w-full min-w-0 md:max-w-3xl lg:max-w-4xl"
                         >
-                            <div className="relative flex min-w-0 items-center overflow-hidden rounded-lg border border-input bg-background">
+                            <div className="relative flex min-w-0 items-center overflow-hidden rounded-lg border border-primary/20 bg-card shadow-xs">
                                 <input
                                     type="search"
                                     name="q"
@@ -573,7 +574,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                 </div>
 
                 {/* Row 2: Category bar — hidden on mobile; from iPad mini (md) up same as desktop (scrollable row) */}
-                <div className="hidden border-t border-border/60 bg-muted/30 md:block">
+                <div className="hidden border-t border-primary/10 bg-linear-to-r from-primary/8 via-secondary/15 to-accent/10 md:block">
                     <div className="mx-auto max-w-7xl scrollbar-none px-6 py-2 md:overflow-x-auto [&::-webkit-scrollbar]:hidden">
                         <div className="flex min-w-0 items-center justify-start gap-2 text-sm md:min-w-max md:flex-nowrap md:pr-4">
                             {/* All: link to home, no icon, no highlight color */}

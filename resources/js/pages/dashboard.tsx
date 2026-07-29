@@ -335,20 +335,22 @@ export default function Dashboard({ listings = [] }: Props) {
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        className="relative overflow-hidden rounded-2xl bg-zinc-900 px-6 py-12 text-white sm:px-12 sm:py-20 lg:px-16"
+                        className="relative overflow-hidden rounded-2xl bg-[#123a3d] px-6 py-12 text-white sm:px-12 sm:py-20 lg:px-16"
                     >
-                        {/* Ambient decorative backgrounds */}
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(120,119,198,0.15),transparent_45%)]" />
-                        <div className="absolute -bottom-20 -left-20 size-80 rounded-full bg-primary/5 blur-3xl" />
+                        {/* Soft colourful atmosphere — mint / peach / sky */}
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,oklch(0.78_0.1_175_/_0.35),transparent_50%)]" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,oklch(0.82_0.08_55_/_0.28),transparent_45%)]" />
+                        <div className="absolute -top-16 right-1/4 size-72 rounded-full bg-accent/20 blur-3xl" />
+                        <div className="absolute -bottom-20 -left-20 size-80 rounded-full bg-primary/25 blur-3xl" />
 
                         <div className="relative z-10 grid gap-10 lg:grid-cols-12 lg:items-center">
                             {/* Left content block */}
                             <div className="space-y-6 lg:col-span-7">
                                 <motion.div
                                     variants={itemVariants}
-                                    className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-primary-foreground backdrop-blur-xs"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-white/12 px-3 py-1 text-xs font-medium text-white backdrop-blur-xs"
                                 >
-                                    <Sparkles className="size-3 text-amber-400" />
+                                    <Sparkles className="size-3 text-amber-300" />
                                     <span>{t('dashboard.hero_badge')}</span>
                                 </motion.div>
 
@@ -357,14 +359,14 @@ export default function Dashboard({ listings = [] }: Props) {
                                     className="font-sans text-4xl leading-[1.1] font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl"
                                 >
                                     {t('dashboard.hero_title_1')} <br />
-                                    <span className="text-zinc-400">
+                                    <span className="text-teal-100/80">
                                         {t('dashboard.hero_title_2')}
                                     </span>
                                 </motion.h1>
 
                                 <motion.p
                                     variants={itemVariants}
-                                    className="max-w-lg text-base text-zinc-300 sm:text-lg"
+                                    className="max-w-lg text-base text-teal-50/85 sm:text-lg"
                                 >
                                     {t('dashboard.hero_description')}
                                 </motion.p>
@@ -375,13 +377,13 @@ export default function Dashboard({ listings = [] }: Props) {
                                 >
                                     <a
                                         href="#explore-catalog"
-                                        className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg bg-white px-6 font-medium text-zinc-950 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                                        className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg bg-secondary px-6 font-medium text-secondary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
                                     >
                                         {t('dashboard.explore_catalog')}
                                     </a>
                                     <Link
                                         href="/listings/create"
-                                        className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 font-medium text-white backdrop-blur-xs transition-colors hover:bg-white/10"
+                                        className="inline-flex h-11 min-h-11 items-center justify-center rounded-lg border border-white/25 bg-white/10 px-6 font-medium text-white backdrop-blur-xs transition-colors hover:bg-white/15"
                                     >
                                         {t('dashboard.sell_your_piece')}
                                     </Link>
@@ -433,7 +435,7 @@ export default function Dashboard({ listings = [] }: Props) {
                 {/* Quick Stats Row */}
                 <div className="grid gap-4 sm:grid-cols-3">
                     {/* Stat Card 1: Total Listings */}
-                    <div className="flex items-center justify-between rounded-xl border border-zinc-200/60 bg-white p-5 shadow-xs transition-all hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/40">
+                    <div className="flex items-center justify-between rounded-xl border border-primary/15 bg-card p-5 shadow-xs transition-all hover:border-primary/30 hover:shadow-md dark:border-primary/20 dark:bg-card">
                         <div className="space-y-1">
                             <p className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
                                 {t('dashboard.total_listings')}
@@ -445,7 +447,7 @@ export default function Dashboard({ listings = [] }: Props) {
                                 {t('dashboard.premium_active')}
                             </p>
                         </div>
-                        <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
+                        <div className="rounded-lg bg-primary/10 p-3 dark:bg-primary/15">
                             <Tag className="size-5 text-primary" />
                         </div>
                     </div>
@@ -453,7 +455,7 @@ export default function Dashboard({ listings = [] }: Props) {
                     {/* Stat Card 2: Favorites Count */}
                     <Link
                         href="/favorites"
-                        className="group flex items-center justify-between rounded-xl border border-zinc-200/60 bg-white p-5 shadow-xs transition-all hover:border-rose-200/50 hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/40 dark:hover:border-rose-950/30"
+                        className="group flex items-center justify-between rounded-xl border border-primary/15 bg-card p-5 shadow-xs transition-all hover:border-rose-300/50 hover:shadow-md dark:border-primary/20 dark:bg-card dark:hover:border-rose-800/40"
                     >
                         <div className="space-y-1">
                             <p className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
@@ -472,7 +474,7 @@ export default function Dashboard({ listings = [] }: Props) {
                     </Link>
 
                     {/* Stat Card 3: Recent Activity */}
-                    <div className="flex items-center justify-between rounded-xl border border-zinc-200/60 bg-white p-5 shadow-xs transition-all hover:shadow-md dark:border-zinc-800/60 dark:bg-zinc-900/40">
+                    <div className="flex items-center justify-between rounded-xl border border-primary/15 bg-card p-5 shadow-xs transition-all hover:border-primary/30 hover:shadow-md dark:border-primary/20 dark:bg-card">
                         <div className="max-w-[70%] min-w-0 space-y-1">
                             <p className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
                                 {t('dashboard.recent_activity')}
@@ -497,8 +499,8 @@ export default function Dashboard({ listings = [] }: Props) {
                                 </>
                             )}
                         </div>
-                        <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800">
-                            <Clock className="size-5 text-zinc-500" />
+                        <div className="rounded-lg bg-accent/40 p-3 dark:bg-accent/20">
+                            <Clock className="size-5 text-accent-foreground" />
                         </div>
                     </div>
                 </div>
@@ -509,7 +511,7 @@ export default function Dashboard({ listings = [] }: Props) {
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        className="space-y-4 rounded-xl border border-zinc-200/60 bg-zinc-50/20 p-5 dark:border-zinc-800/40 dark:bg-zinc-900/10"
+                        className="space-y-4 rounded-xl border border-primary/12 bg-secondary/25 p-5 dark:border-primary/20 dark:bg-secondary/10"
                     >
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
