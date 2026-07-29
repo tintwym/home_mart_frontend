@@ -233,16 +233,20 @@ async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
 
         if (!isPage) {
             if (res.ok) {
-                // GET that returns HTML/static (e.g. Vercel index.html or an
-                // ad-blocked empty shell) is a failed page navigation — do not
-                // pretend the current page succeeded.
+                // GET returned static HTML (Vercel shell / blocked path) instead
+                // of Inertia JSON. Soft-nav would look "dead" — hard navigate.
                 if (method === 'get') {
+                    if (currentPage) {
+                        window.location.assign(
+                            new URL(url, window.location.origin).href,
+                        );
+                        return;
+                    }
                     options.onError?.({
                         message: 'Server did not return an Inertia page.',
                     });
                     return;
                 }
-                // Non-GET JSON endpoint hit through router (e.g. typing ping).
                 if (currentPage) options.onSuccess?.(currentPage);
             } else {
                 const p = (payload ?? {}) as Record<string, unknown>;

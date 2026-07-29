@@ -17,7 +17,7 @@ import { LocationIndicator } from '@/components/location-indicator';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { LogoutConfirmDialog } from '@/components/logout-confirm-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
@@ -49,7 +49,7 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { useTranslations } from '@/hooks/use-translations';
-import { cn, toUrl } from '@/lib/utils';
+import { toUrl } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
 import { index as settingsIndex } from '@/routes/settings';
 import type {
@@ -240,7 +240,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
 
                     {/* Center: search bar — grows with row; cap widens on larger breakpoints */}
-                    <div className="flex min-w-0 flex-2 basis-0 justify-center md:min-w-0 md:flex-1 md:basis-0 md:justify-center md:px-3 lg:px-4">
+                    <div className="relative z-0 flex min-w-0 flex-2 basis-0 justify-center md:min-w-0 md:flex-1 md:basis-0 md:justify-center md:px-3 lg:px-4">
                         <form
                             ref={dropdownRef}
                             onSubmit={searchFormSubmit}
@@ -350,104 +350,67 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
 
                     {/* Right: region/currency, inbox, wishlist, cart, profile */}
-                    <div className="relative z-20 flex shrink-0 items-center gap-0.5 md:gap-2">
+                    <div className="relative z-30 flex shrink-0 items-center gap-0.5 md:gap-2">
                         <div className="hidden items-center gap-1.5 sm:flex">
                             <LocationIndicator />
                             <CurrencySwitcher />
                         </div>
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link
-                                        href="/inbox"
-                                        className={cn(
-                                            buttonVariants({
-                                                variant: 'ghost',
-                                                size: 'icon',
-                                            }),
-                                            'relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9',
-                                        )}
-                                        aria-label={t('nav.chat')}
-                                    >
-                                        <MessageCircle className="size-5 opacity-80 group-hover:opacity-100" />
-                                        {(auth?.chatUnreadCount ?? 0) > 0 && (
-                                            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                {(auth?.chatUnreadCount ?? 0) >
-                                                99
-                                                    ? '99+'
-                                                    : auth?.chatUnreadCount}
-                                            </span>
-                                        )}
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{t('nav.chat')}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Link
-                                        href="/favorites"
-                                        className={cn(
-                                            buttonVariants({
-                                                variant: 'ghost',
-                                                size: 'icon',
-                                            }),
-                                            'relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9',
-                                        )}
-                                        aria-label={t('nav.wishlist')}
-                                    >
-                                        <Heart className="size-5 opacity-80" />
-                                        {(auth?.favoriteListingIds?.length ??
-                                            0) > 0 && (
-                                            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                {
-                                                    auth?.favoriteListingIds
-                                                        ?.length
-                                                }
-                                            </span>
-                                        )}
-                                    </Link>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{t('nav.favorites')}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9"
-                                        aria-label={t('nav.cart')}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            window.dispatchEvent(
-                                                new CustomEvent(
-                                                    'open-cart-drawer',
-                                                ),
-                                            );
-                                        }}
-                                    >
-                                        <ShoppingCart className="size-5 opacity-80" />
-                                        {(auth?.cartCount ?? 0) > 0 && (
-                                            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                {(auth?.cartCount ?? 0) > 99
-                                                    ? '99+'
-                                                    : auth?.cartCount}
-                                            </span>
-                                        )}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{t('nav.cart')}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9"
+                            aria-label={t('nav.chat')}
+                            title={t('nav.chat')}
+                            onClick={() => router.get('/inbox')}
+                        >
+                            <MessageCircle className="size-5 opacity-80" />
+                            {(auth?.chatUnreadCount ?? 0) > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                    {(auth?.chatUnreadCount ?? 0) > 99
+                                        ? '99+'
+                                        : auth?.chatUnreadCount}
+                                </span>
+                            )}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9"
+                            aria-label={t('nav.wishlist')}
+                            title={t('nav.favorites')}
+                            onClick={() => router.get('/favorites')}
+                        >
+                            <Heart className="size-5 opacity-80" />
+                            {(auth?.favoriteListingIds?.length ?? 0) > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                    {auth?.favoriteListingIds?.length}
+                                </span>
+                            )}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9"
+                            aria-label={t('nav.cart')}
+                            title={t('nav.cart')}
+                            onClick={() => {
+                                window.dispatchEvent(
+                                    new CustomEvent('open-cart-drawer'),
+                                );
+                            }}
+                        >
+                            <ShoppingCart className="size-5 opacity-80" />
+                            {(auth?.cartCount ?? 0) > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                    {(auth?.cartCount ?? 0) > 99
+                                        ? '99+'
+                                        : auth?.cartCount}
+                                </span>
+                            )}
+                        </Button>
                         <div className="ml-1 hidden gap-1 md:flex">
                             {rightNavItems.map((item) => (
                                 <TooltipProvider

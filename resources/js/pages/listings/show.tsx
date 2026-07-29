@@ -4,6 +4,7 @@ import {
     ArrowLeft,
     Heart,
     MapPin,
+    MessageSquare,
     ShoppingBag,
     ShoppingCart,
     Sparkles,
