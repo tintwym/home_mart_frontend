@@ -2,6 +2,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import {
     ArrowLeft,
+    Heart,
     MapPin,
     ShoppingBag,
     ShoppingCart,
@@ -11,7 +12,6 @@ import {
     Clock,
     Shield,
     Award,
-    MessageSquare,
 } from 'lucide-react';
 import { AdSlot } from '@/components/ad-slot';
 import PriceAlertSubscription from '@/components/price-alert-subscription';
@@ -133,7 +133,7 @@ export default function ShowListing({
     const { auth } = pageProps;
     const flash = pageProps.flash;
     const { formatPrice } = useCurrency();
-    const { t } = useTranslations();
+    const { t, categoryName } = useTranslations();
     const reviews = listing?.reviews ?? [];
     const userReview = reviews.find((r) => r.user?.id === auth?.user?.id);
     const { data, setData, post, processing, errors } = useForm({
@@ -144,16 +144,9 @@ export default function ShowListing({
     const [zoomPos, setZoomPos] = useState({ x: 0, y: 0 });
     const [isZoomed, setIsZoomed] = useState(false);
 
-    const primaryImg =
-        listing?.image_url ??
-        listing?.image_path ??
-        'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80';
-    const galleryImages = [
-        primaryImg,
-        'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-    ];
-    const [activeImage, setActiveImage] = useState(primaryImg);
+    const primaryImg = listing?.image_url ?? listing?.image_path ?? null;
+    const galleryImages = primaryImg ? [primaryImg] : [];
+    const [activeImage, setActiveImage] = useState<string | null>(primaryImg);
     const [prevListingId, setPrevListingId] = useState(listing?.id);
     if (listing?.id && listing.id !== prevListingId) {
         setPrevListingId(listing.id);
@@ -225,6 +218,38 @@ export default function ShowListing({
     const isSold = !!listing.is_sold;
     const showBuyerActions = !isOwner && !isSold && (isBuyer || isGuest);
     const isBusinessSeller = listing.user?.seller_type === 'business';
+    const isFavorite =
+        !!auth?.user && !!auth.favoriteListingIds?.includes(listing.id);
+
+    const handleFavoriteToggle = () => {
+        if (!auth?.user) {
+            router.get('/login');
+            return;
+        }
+        const nextIsFavorite = !isFavorite;
+        router.post(
+            `/listings/${listing.id}/favorite`,
+            {},
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    toast({
+                        title: nextIsFavorite
+                            ? t('favorites.added_title')
+                            : t('favorites.removed_title'),
+                        description: nextIsFavorite
+                            ? t('favorites.added_description', {
+                                  title: listing.title,
+                              })
+                            : t('favorites.removed_description', {
+                                  title: listing.title,
+                              }),
+                        variant: 'success',
+                    });
+                },
+            },
+        );
+    };
 
     const handleAddToCart = () => {
         router.post(
@@ -234,8 +259,10 @@ export default function ShowListing({
                 preserveScroll: true,
                 onSuccess: () => {
                     toast({
-                        title: t('listing.added_to_cart') || 'Added to Cart',
-                        description: `"${listing.title}" has been added to your cart.`,
+                        title: t('listing.added_to_cart'),
+                        description: t('listing.added_to_cart_body', {
+                            title: listing.title,
+                        }),
                         variant: 'success',
                     });
                 },
@@ -251,8 +278,10 @@ export default function ShowListing({
                 preserveScroll: true,
                 onSuccess: () => {
                     toast({
-                        title: 'Preparing Purchase',
-                        description: `"${listing.title}" added and redirecting to checkout.`,
+                        title: t('listing.preparing_purchase'),
+                        description: t('listing.preparing_purchase_body', {
+                            title: listing.title,
+                        }),
                         variant: 'success',
                     });
                 },
@@ -266,15 +295,33 @@ export default function ShowListing({
             preserveScroll: true,
             onSuccess: () => {
                 toast({
-                    title: 'Review Submitted',
-                    description: 'Thank you for your feedback!',
+                    title: t('listing.review_submitted'),
+                    description: t('listing.review_submitted_body'),
                     variant: 'success',
                 });
             },
         });
     };
 
-    /* Sidebar: full-width stacked buttons */
+    const ratingDistribution = (() => {
+        const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        for (const r of listing.reviews ?? []) {
+            const star = Math.min(5, Math.max(1, Math.round(r.rating))) as
+                | 1
+                | 2
+                | 3
+                | 4
+                | 5;
+            counts[star] += 1;
+        }
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        return ([5, 4, 3, 2, 1] as const).map((stars) => ({
+            stars,
+            pct: total === 0 ? 0 : Math.round((counts[stars] / total) * 100),
+        }));
+    })();
+
+    /* Sidebar: business = cart/buy; individual (C2C) = chat/offer first */
     const sidebarBuyerActions = (
         <div className="flex flex-col gap-2">
             {isBusinessSeller ? (
@@ -315,26 +362,7 @@ export default function ShowListing({
                         </Button>
                     </>
                 )
-            ) : auth?.cartListingIds?.includes(listing.id) ? (
-                <Button variant="outline" className="w-full" asChild>
-                    <Link
-                        href="/cart"
-                        className="inline-flex items-center gap-2"
-                    >
-                        <ShoppingCart className="mr-2 size-4" />
-                        {t('listing.in_cart')}
-                    </Link>
-                </Button>
-            ) : (
-                <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={handleAddToCart}
-                >
-                    <ShoppingCart className="mr-2 size-4" />
-                    {t('listing.add_to_cart')}
-                </Button>
-            )}
+            ) : null}
 
             <Button
                 variant={isBusinessSeller ? 'outline' : 'default'}
@@ -349,23 +377,32 @@ export default function ShowListing({
     const sidebarGuestActions = (
         <div className="flex flex-col gap-2">
             {isBusinessSeller ? (
-                <Button className="w-full" asChild>
-                    <Link
-                        href="/login"
-                        className="inline-flex items-center gap-2"
-                    >
-                        <ShoppingBag className="mr-2 size-4" />
-                        {t('listing.sign_in_to_buy')}
-                    </Link>
-                </Button>
+                <>
+                    <Button className="w-full" asChild>
+                        <Link
+                            href="/login"
+                            className="inline-flex items-center gap-2"
+                        >
+                            <ShoppingBag className="mr-2 size-4" />
+                            {t('listing.sign_in_to_buy')}
+                        </Link>
+                    </Button>
+                    <Button variant="outline" className="w-full" asChild>
+                        <Link
+                            href="/login"
+                            className="inline-flex items-center gap-2"
+                        >
+                            <ShoppingCart className="mr-2 size-4" />
+                            {t('listing.sign_in_to_add_to_cart')}
+                        </Link>
+                    </Button>
+                </>
             ) : null}
-            <Button variant="outline" className="w-full" asChild>
-                <Link href="/login" className="inline-flex items-center gap-2">
-                    <ShoppingCart className="mr-2 size-4" />
-                    {t('listing.sign_in_to_add_to_cart')}
-                </Link>
-            </Button>
-            <Button variant="outline" className="w-full" asChild>
+            <Button
+                variant={isBusinessSeller ? 'outline' : 'default'}
+                className="w-full"
+                asChild
+            >
                 <Link href="/login">{t('listing.sign_in_to_make_offer')}</Link>
             </Button>
         </div>
@@ -392,12 +429,36 @@ export default function ShowListing({
                         </Link>
                     </Button>
 
-                    {isOwner && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
-                            <span className="size-2 rounded-full bg-primary" />
-                            Your Listing
-                        </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {!isOwner && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="min-h-11 touch-manipulation sm:min-h-8"
+                                onClick={handleFavoriteToggle}
+                                aria-label={
+                                    isFavorite
+                                        ? t('favorites.remove_item')
+                                        : t('favorites.saved_item')
+                                }
+                            >
+                                <Heart
+                                    className={`size-4 ${
+                                        isFavorite
+                                            ? 'fill-rose-500 text-rose-500'
+                                            : 'text-zinc-500'
+                                    }`}
+                                />
+                            </Button>
+                        )}
+                        {isOwner && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                                <span className="size-2 rounded-full bg-primary" />
+                                {t('listing.your_listing_badge')}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 {flash?.status && (
@@ -453,7 +514,7 @@ export default function ShowListing({
 
                                 {activeImage && (
                                     <div className="pointer-events-none absolute right-3 bottom-3 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur-xs transition-opacity duration-300 group-hover:opacity-0">
-                                        Hover to zoom details
+                                        {t('listing.hover_to_zoom')}
                                     </div>
                                 )}
                             </div>
@@ -520,7 +581,7 @@ export default function ShowListing({
                                 {listing.meetup_location && (
                                     <div className="space-y-1">
                                         <p className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                            {t('listing.meetup_location')}
+                                            {t('listing.meetup_location_label')}
                                         </p>
                                         <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                                             {listing.meetup_location}
@@ -530,7 +591,7 @@ export default function ShowListing({
                             </div>
 
                             {listing.meetup_location && (
-                                <div className="dark:border-zinc-850 mt-4 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 dark:bg-zinc-950/20">
+                                <div className="dark:border-zinc-800 mt-4 overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 dark:bg-zinc-950/20">
                                     <div className="flex h-32 items-center justify-center p-4 text-center">
                                         <div className="space-y-1.5">
                                             <MapPin className="mx-auto size-6 animate-bounce text-primary" />
@@ -538,8 +599,7 @@ export default function ShowListing({
                                                 {listing.meetup_location}
                                             </p>
                                             <p className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                                                Meetup arranged in person.
-                                                Ensure safe exchange!
+                                                {t('listing.meetup_safety')}
                                             </p>
                                         </div>
                                     </div>
@@ -564,7 +624,7 @@ export default function ShowListing({
                                 </div>
                             </div>
 
-                            <div className="border-zinc-105 dark:border-zinc-850 mb-8 grid gap-6 rounded-xl border bg-zinc-50/50 p-5 sm:grid-cols-12 dark:bg-zinc-950/10">
+                            <div className="border-zinc-100 dark:border-zinc-800 mb-8 grid gap-6 rounded-xl border bg-zinc-50/50 p-5 sm:grid-cols-12 dark:bg-zinc-950/10">
                                 <div className="flex flex-col items-center justify-center border-zinc-200/60 py-2 text-center sm:col-span-4 sm:border-r dark:border-zinc-800/60">
                                     <p className="text-4xl font-extrabold text-zinc-950 dark:text-zinc-50">
                                         {averageRating > 0
@@ -590,39 +650,7 @@ export default function ShowListing({
                                 </div>
 
                                 <div className="flex flex-col justify-center space-y-2 sm:col-span-8">
-                                    {[
-                                        {
-                                            stars: 5,
-                                            pct: averageRating >= 4 ? 85 : 0,
-                                        },
-                                        {
-                                            stars: 4,
-                                            pct:
-                                                averageRating >= 3.5 &&
-                                                averageRating < 4
-                                                    ? 70
-                                                    : averageRating >= 4
-                                                      ? 10
-                                                      : 0,
-                                        },
-                                        {
-                                            stars: 3,
-                                            pct:
-                                                averageRating >= 2.5 &&
-                                                averageRating < 3.5
-                                                    ? 55
-                                                    : 0,
-                                        },
-                                        {
-                                            stars: 2,
-                                            pct:
-                                                averageRating > 0 &&
-                                                averageRating < 2.5
-                                                    ? 30
-                                                    : 0,
-                                        },
-                                        { stars: 1, pct: 0 },
-                                    ].map((row) => (
+                                    {ratingDistribution.map((row) => (
                                         <div
                                             key={row.stars}
                                             className="flex items-center gap-3 text-xs"
@@ -649,11 +677,11 @@ export default function ShowListing({
                             {canReview && (
                                 <form
                                     onSubmit={submitReview}
-                                    className="dark:border-zinc-850 mb-8 rounded-xl border border-zinc-100 bg-zinc-50/30 p-5 dark:bg-zinc-950/5"
+                                    className="dark:border-zinc-800 mb-8 rounded-xl border border-zinc-100 bg-zinc-50/30 p-5 dark:bg-zinc-950/5"
                                 >
                                     <h3 className="mb-3 text-sm font-bold text-zinc-900 dark:text-zinc-100">
                                         {userReview
-                                            ? 'Edit Your Review'
+                                            ? t('listing.edit_your_review')
                                             : t('listing.write_a_review')}
                                     </h3>
                                     <div className="space-y-4">
@@ -748,7 +776,7 @@ export default function ShowListing({
                                     reviews.map((review) => (
                                         <div
                                             key={review.id}
-                                            className="dark:border-zinc-850 rounded-xl border border-zinc-100 bg-white p-4.5 shadow-xs dark:bg-zinc-900/20"
+                                            className="dark:border-zinc-800 rounded-xl border border-zinc-100 bg-white p-4.5 shadow-xs dark:bg-zinc-900/20"
                                         >
                                             <div className="flex gap-4">
                                                 <Avatar className="size-9 shrink-0 border border-zinc-100 dark:border-zinc-800">
@@ -763,7 +791,7 @@ export default function ShowListing({
                                                 </Avatar>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <p className="text-zinc-855 text-sm font-semibold dark:text-zinc-100">
+                                                        <p className="text-zinc-800 text-sm font-semibold dark:text-zinc-100">
                                                             {review.user
                                                                 ?.name ??
                                                                 t(
@@ -812,12 +840,14 @@ export default function ShowListing({
                         <div className="space-y-4 rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-xs dark:border-zinc-800/80 dark:bg-zinc-900/40">
                             <div className="flex flex-wrap items-center gap-2">
                                 <span className="rounded-md bg-zinc-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-400">
-                                    {listing.category?.name ?? 'General'}
+                                    {listing.category
+                                        ? categoryName(listing.category)
+                                        : t('listing.category_general')}
                                 </span>
                                 {isTrending && (
                                     <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold tracking-wider text-amber-800 uppercase dark:bg-amber-950/20 dark:text-amber-400">
                                         <Sparkles className="size-3" />
-                                        Trending
+                                        {t('listing.trending')}
                                     </span>
                                 )}
                             </div>
@@ -837,60 +867,64 @@ export default function ShowListing({
                                 </div>
                             </div>
 
-                            <div className="border-t border-zinc-100 pt-2 dark:border-zinc-800/50">
-                                <PriceAlertSubscription
-                                    listingId={listing.id}
-                                    listingTitle={listing.title}
-                                    currentPrice={listing.price}
-                                    userEmail={auth?.user?.email ?? ''}
-                                    region={listing.user?.region}
-                                />
-                            </div>
+                            {!isSold && (
+                                <div className="border-t border-zinc-100 pt-2 dark:border-zinc-800/50">
+                                    <PriceAlertSubscription
+                                        listingId={listing.id}
+                                        listingTitle={listing.title}
+                                        currentPrice={listing.price}
+                                        userEmail={auth?.user?.email ?? ''}
+                                        region={listing.user?.region}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Attributes Bento Grid */}
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="dark:border-zinc-850 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
+                            <div className="dark:border-zinc-800 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
                                 <Shield className="mb-1.5 size-4 stroke-[1.8] text-primary" />
                                 <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
                                     {t('listing.condition')}
                                 </p>
-                                <p className="text-zinc-850 mt-0.5 text-xs font-bold dark:text-zinc-200">
+                                <p className="text-zinc-800 mt-0.5 text-xs font-bold dark:text-zinc-200">
                                     {CONDITION_KEYS[listing.condition]
                                         ? t(CONDITION_KEYS[listing.condition])
                                         : listing.condition}
                                 </p>
                             </div>
 
-                            <div className="dark:border-zinc-850 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
+                            <div className="dark:border-zinc-800 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
                                 <MapPin className="mb-1.5 size-4 stroke-[1.8] text-primary" />
                                 <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
                                     {t('listing.deal_method')}
                                 </p>
-                                <p className="text-zinc-855 mt-0.5 truncate text-xs font-bold dark:text-zinc-200">
+                                <p className="text-zinc-800 mt-0.5 truncate text-xs font-bold dark:text-zinc-200">
                                     {listing.meetup_location
                                         ? t('listing.meetup')
                                         : t('listing.delivery')}
                                 </p>
                             </div>
 
-                            <div className="dark:border-zinc-850 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
+                            <div className="dark:border-zinc-800 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
                                 <Clock className="mb-1.5 size-4 stroke-[1.8] text-primary" />
                                 <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                    Listed
+                                    {t('listing.listed')}
                                 </p>
-                                <p className="text-zinc-855 mt-0.5 text-xs font-bold dark:text-zinc-200">
+                                <p className="text-zinc-800 mt-0.5 text-xs font-bold dark:text-zinc-200">
                                     {formatRelativeTime(listing.created_at, t)}
                                 </p>
                             </div>
 
-                            <div className="dark:border-zinc-850 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
+                            <div className="dark:border-zinc-800 rounded-xl border border-zinc-100 bg-white p-3.5 dark:bg-zinc-900/30">
                                 <Tag className="mb-1.5 size-4 stroke-[1.8] text-primary" />
                                 <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                    Type
+                                    {t('listing.seller_type_label')}
                                 </p>
-                                <p className="text-zinc-850 mt-0.5 text-xs font-bold capitalize dark:text-zinc-200">
-                                    {listing.user?.seller_type ?? 'Individual'}
+                                <p className="text-zinc-800 mt-0.5 text-xs font-bold capitalize dark:text-zinc-200">
+                                    {listing.user?.seller_type === 'business'
+                                        ? t('user.business_seller')
+                                        : t('user.individual_seller')}
                                 </p>
                             </div>
                         </div>
@@ -954,24 +988,36 @@ export default function ShowListing({
                                                 {t('listing.edit_listing')}
                                             </Link>
                                         </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full rounded-xl"
-                                            disabled={!!isTrending}
-                                            onClick={() =>
-                                                !isTrending &&
-                                                router.post(
-                                                    `/listings/${listing.id}/promote`,
-                                                )
-                                            }
-                                        >
-                                            <Sparkles className="mr-2 size-4 text-amber-500" />
-                                            {isTrending
-                                                ? t('listing.promoted')
-                                                : t('listing.make_it_trend', {
-                                                      price: trendPriceLabel,
-                                                  })}
-                                        </Button>
+                                        {!isSold && (
+                                            <Button
+                                                variant="outline"
+                                                className="w-full rounded-xl"
+                                                disabled={!!isTrending}
+                                                onClick={() =>
+                                                    !isTrending &&
+                                                    router.post(
+                                                        `/listings/${listing.id}/promote`,
+                                                    )
+                                                }
+                                            >
+                                                <Sparkles className="mr-2 size-4 text-amber-500" />
+                                                {isTrending
+                                                    ? t('listing.promoted')
+                                                    : t(
+                                                          'listing.make_it_trend',
+                                                          {
+                                                              price: trendPriceLabel,
+                                                          },
+                                                      )}
+                                            </Button>
+                                        )}
+                                        {isSold && (
+                                            <div className="rounded-xl border border-zinc-200 bg-zinc-100/80 px-4 py-3 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+                                                <p className="text-sm font-bold tracking-wide text-zinc-700 uppercase dark:text-zinc-200">
+                                                    {t('favorites.sold_out')}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : isSold ? (
                                     <div className="rounded-xl border border-zinc-200 bg-zinc-100/80 px-4 py-3 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -995,11 +1041,13 @@ export default function ShowListing({
                                 {[
                                     {
                                         icon: Shield,
-                                        label: 'Secure marketplace escrow verification',
+                                        label: t('listing.trust_c2c_safety'),
                                     },
                                     {
                                         icon: Award,
-                                        label: 'Inspected condition check guarantee',
+                                        label: t(
+                                            'listing.trust_inspect_before_pay',
+                                        ),
                                     },
                                 ].map((item, idx) => (
                                     <div
@@ -1036,9 +1084,9 @@ export default function ShowListing({
                 {/* Ad slot - below main content */}
                 <AdSlot slotId="listing-below" className="mt-12" />
 
-                {/* Mobile sticky footer - Buy first, Add to cart second. Shown when sidebar hidden (below md). */}
+                {/* Mobile sticky footer — shown when sidebar is hidden (below md). */}
                 {showBuyerActions && isBusinessSeller && auth?.user && (
-                    <div className="fixed right-0 bottom-0 left-0 z-50 flex gap-3 rounded-t-2xl border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl backdrop-blur-md md:hidden">
+                    <div className="fixed right-0 bottom-0 left-0 z-50 flex gap-2 rounded-t-2xl border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl backdrop-blur-md md:hidden">
                         {auth.cartListingIds?.includes(listing.id) ? (
                             <>
                                 <Button
@@ -1086,79 +1134,44 @@ export default function ShowListing({
                                 </Button>
                             </>
                         )}
+                        <Button
+                            variant="outline"
+                            className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
+                            onClick={() =>
+                                router.post(`/listings/${listing.id}/chat`)
+                            }
+                        >
+                            {t('listing.make_offer')}
+                        </Button>
                     </div>
                 )}
                 {showBuyerActions && !isBusinessSeller && (
                     <div className="fixed right-0 bottom-0 left-0 z-50 flex gap-3 rounded-t-2xl border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl backdrop-blur-md md:hidden">
                         {auth?.user ? (
-                            <>
-                                {auth.cartListingIds?.includes(listing.id) ? (
-                                    <Button
-                                        variant="outline"
-                                        className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
-                                        asChild
-                                    >
-                                        <Link
-                                            href="/cart"
-                                            className="inline-flex items-center justify-center gap-2"
-                                        >
-                                            <ShoppingCart className="size-4" />
-                                            {t('listing.in_cart')}
-                                        </Link>
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
-                                        onClick={handleAddToCart}
-                                    >
-                                        <ShoppingCart className="mr-2 size-4" />
-                                        {t('listing.add_to_cart')}
-                                    </Button>
-                                )}
-                                <Button
-                                    className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
-                                    onClick={() =>
-                                        router.post(
-                                            `/listings/${listing.id}/chat`,
-                                        )
-                                    }
-                                >
-                                    {t('listing.make_offer')}
-                                </Button>
-                            </>
+                            <Button
+                                className="min-h-12 w-full touch-manipulation rounded-xl font-bold"
+                                onClick={() =>
+                                    router.post(`/listings/${listing.id}/chat`)
+                                }
+                            >
+                                {t('listing.make_offer')}
+                            </Button>
                         ) : (
-                            <>
-                                <Button
-                                    variant="outline"
-                                    className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
-                                    asChild
+                            <Button
+                                className="min-h-12 w-full touch-manipulation rounded-xl font-bold"
+                                asChild
+                            >
+                                <Link
+                                    href="/login"
+                                    className="inline-flex items-center justify-center"
                                 >
-                                    <Link
-                                        href="/login"
-                                        className="inline-flex items-center justify-center gap-2"
-                                    >
-                                        <ShoppingCart className="size-4" />
-                                        {t('listing.sign_in_to_add_to_cart')}
-                                    </Link>
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
-                                    asChild
-                                >
-                                    <Link
-                                        href="/login"
-                                        className="inline-flex items-center justify-center"
-                                    >
-                                        {t('listing.sign_in_to_make_offer')}
-                                    </Link>
-                                </Button>
-                            </>
+                                    {t('listing.sign_in_to_make_offer')}
+                                </Link>
+                            </Button>
                         )}
                     </div>
                 )}
-                {isGuest && isBusinessSeller && (
+                {showBuyerActions && isGuest && isBusinessSeller && (
                     <div className="fixed right-0 bottom-0 left-0 z-50 flex gap-3 rounded-t-2xl border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl backdrop-blur-md md:hidden">
                         <Button
                             className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
@@ -1183,6 +1196,18 @@ export default function ShowListing({
                             >
                                 <ShoppingCart className="size-4" />
                                 {t('listing.sign_in_to_add_to_cart')}
+                            </Link>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="min-h-12 flex-1 touch-manipulation rounded-xl font-bold"
+                            asChild
+                        >
+                            <Link
+                                href="/login"
+                                className="inline-flex items-center justify-center"
+                            >
+                                {t('listing.sign_in_to_make_offer')}
                             </Link>
                         </Button>
                     </div>
