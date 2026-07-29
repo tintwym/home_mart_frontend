@@ -62,6 +62,26 @@
       "destination": "https://home-mart-backend.onrender.com/chat/:id/typing"
     },
     {
+      "source": "/inbox/:id/messages/since",
+      "destination": "https://home-mart-backend.onrender.com/inbox/:id/messages/since"
+    },
+    {
+      "source": "/inbox/:id/messages/older",
+      "destination": "https://home-mart-backend.onrender.com/inbox/:id/messages/older"
+    },
+    {
+      "source": "/inbox/:id/typing",
+      "destination": "https://home-mart-backend.onrender.com/inbox/:id/typing"
+    },
+    {
+      "source": "/inbox/:id/messages",
+      "destination": "https://home-mart-backend.onrender.com/inbox/:id/messages"
+    },
+    {
+      "source": "/chat/:id/messages",
+      "destination": "https://home-mart-backend.onrender.com/chat/:id/messages"
+    },
+    {
       "source": "/region",
       "destination": "https://home-mart-backend.onrender.com/region"
     },

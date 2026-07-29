@@ -437,7 +437,7 @@ export default function Orders({ orders = [] }: Props) {
                                                     size="sm"
                                                     asChild
                                                 >
-                                                    <Link href="/chat">
+                                                    <Link href="/inbox">
                                                         {t(
                                                             'orders.contact_seller',
                                                         )}

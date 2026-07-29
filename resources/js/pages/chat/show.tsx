@@ -189,7 +189,7 @@ function ChatMessageList({
                 '1970-01-01T00:00:00.000000Z';
             try {
                 const res = await fetch(
-                    `/chat/${conversationId}/messages/since?after=${encodeURIComponent(after)}`,
+                    `/inbox/${conversationId}/messages/since?after=${encodeURIComponent(after)}`,
                     {
                         credentials: 'include',
                         headers: { Accept: 'application/json' },
@@ -227,7 +227,7 @@ function ChatMessageList({
         try {
             const before = messages[0].created_at;
             const res = await fetch(
-                `/chat/${conversationId}/messages/older?before=${encodeURIComponent(before)}`,
+                `/inbox/${conversationId}/messages/older?before=${encodeURIComponent(before)}`,
                 {
                     credentials: 'include',
                     headers: { Accept: 'application/json' },
@@ -402,7 +402,7 @@ export default function ChatShow({
     const notifyTyping = useCallback(() => {
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
-            fetch(`/chat/${conversation.id}/typing`, {
+            fetch(`/inbox/${conversation.id}/typing`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -426,7 +426,7 @@ export default function ChatShow({
     useEffect(() => {
         const interval = setInterval(async () => {
             try {
-                const res = await fetch(`/chat/${conversation.id}/typing`, {
+                const res = await fetch(`/inbox/${conversation.id}/typing`, {
                     credentials: 'include',
                     headers: { Accept: 'application/json' },
                 });
@@ -456,7 +456,7 @@ export default function ChatShow({
         });
         setOfferSubmitting(true);
         router.post(
-            `/chat/${conversation.id}/messages`,
+            `/inbox/${conversation.id}/messages`,
             { body: offerText },
             {
                 preserveScroll: true,
@@ -471,7 +471,7 @@ export default function ChatShow({
 
     const submitMessage = (e: React.FormEvent) => {
         e.preventDefault();
-        post(`/chat/${conversation.id}/messages`, {
+        post(`/inbox/${conversation.id}/messages`, {
             onSuccess: () => reset('body'),
         });
     };
@@ -526,7 +526,7 @@ export default function ChatShow({
                                                         conv.id,
                                                     );
                                                     router.get(
-                                                        `/chat/${conv.id}`,
+                                                        `/inbox/${conv.id}`,
                                                         undefined,
                                                         {
                                                             preserveState: false,
@@ -664,7 +664,7 @@ export default function ChatShow({
                             <div className="flex items-center justify-between border-b border-border/50 bg-background px-4 py-3">
                                 <div className="flex items-center gap-3">
                                     <Link
-                                        href="/chat"
+                                        href="/inbox"
                                         aria-label={t('chat.back_to_chats')}
                                         className="flex size-11 min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-foreground hover:bg-accent md:hidden"
                                     >

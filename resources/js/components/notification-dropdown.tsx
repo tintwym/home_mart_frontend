@@ -48,7 +48,7 @@ export function NotificationDropdownContent() {
 
     const getHref = (n: Notification) => {
         if (n.type === 'new_message' && n.data.conversation_id)
-            return `/chat/${n.data.conversation_id}`;
+            return `/inbox/${n.data.conversation_id}`;
         if (n.type === 'new_favorite' && n.data.listing_id)
             return `/listings/${n.data.listing_id}`;
         return '#';

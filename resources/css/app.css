@@ -208,22 +208,3 @@
         }
     }
 }
-
-@layer utilities {
-    /* Soft tinted surfaces for cards/panels that hardcode white elsewhere */
-    .surface-tint {
-        background-color: color-mix(
-            in oklch,
-            var(--card) 92%,
-            var(--primary) 8%
-        );
-    }
-
-    .surface-warm {
-        background-color: color-mix(
-            in oklch,
-            var(--card) 90%,
-            var(--secondary) 10%
-        );
-    }
-}

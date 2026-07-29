@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefa
 /**
 * @see \App\Http\Controllers\ChatController::status
 * @see app/Http/Controllers/ChatController.php:226
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 export const status = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: status.url(args, options),
@@ -11,13 +11,13 @@ export const status = (args: { conversation: string | { id: string } } | [conver
 
 status.definition = {
     methods: ["get","head"],
-    url: '/chat/{conversation}/typing',
+    url: '/inbox/{conversation}/typing',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\ChatController::status
 * @see app/Http/Controllers/ChatController.php:226
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 status.url = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -50,7 +50,7 @@ status.url = (args: { conversation: string | { id: string } } | [conversation: s
 /**
 * @see \App\Http\Controllers\ChatController::status
 * @see app/Http/Controllers/ChatController.php:226
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 status.get = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: status.url(args, options),
@@ -60,7 +60,7 @@ status.get = (args: { conversation: string | { id: string } } | [conversation: s
 /**
 * @see \App\Http\Controllers\ChatController::status
 * @see app/Http/Controllers/ChatController.php:226
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 status.head = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: status.url(args, options),

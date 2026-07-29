@@ -82,6 +82,7 @@ export default defineConfig({
                 '/cart',
                 '/favorites',
                 '/chat',
+                '/inbox',
                 '/checkout',
                 '/settings',
                 '/region',

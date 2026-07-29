@@ -3,7 +3,7 @@ import messages from './messages'
 /**
 * @see \App\Http\Controllers\ChatController::index
 * @see app/Http/Controllers/ChatController.php:18
-* @route '/chat'
+* @route '/inbox'
 */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(options),
@@ -12,13 +12,13 @@ export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 
 index.definition = {
     methods: ["get","head"],
-    url: '/chat',
+    url: '/inbox',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\ChatController::index
 * @see app/Http/Controllers/ChatController.php:18
-* @route '/chat'
+* @route '/inbox'
 */
 index.url = (options?: RouteQueryOptions) => {
     return index.definition.url + queryParams(options)
@@ -27,7 +27,7 @@ index.url = (options?: RouteQueryOptions) => {
 /**
 * @see \App\Http\Controllers\ChatController::index
 * @see app/Http/Controllers/ChatController.php:18
-* @route '/chat'
+* @route '/inbox'
 */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: index.url(options),
@@ -37,7 +37,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 /**
 * @see \App\Http\Controllers\ChatController::index
 * @see app/Http/Controllers/ChatController.php:18
-* @route '/chat'
+* @route '/inbox'
 */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(options),
@@ -47,7 +47,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 /**
 * @see \App\Http\Controllers\ChatController::show
 * @see app/Http/Controllers/ChatController.php:59
-* @route '/chat/{conversation}'
+* @route '/inbox/{conversation}'
 */
 export const show = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
@@ -56,13 +56,13 @@ export const show = (args: { conversation: string | { id: string } } | [conversa
 
 show.definition = {
     methods: ["get","head"],
-    url: '/chat/{conversation}',
+    url: '/inbox/{conversation}',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\ChatController::show
 * @see app/Http/Controllers/ChatController.php:59
-* @route '/chat/{conversation}'
+* @route '/inbox/{conversation}'
 */
 show.url = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -95,7 +95,7 @@ show.url = (args: { conversation: string | { id: string } } | [conversation: str
 /**
 * @see \App\Http\Controllers\ChatController::show
 * @see app/Http/Controllers/ChatController.php:59
-* @route '/chat/{conversation}'
+* @route '/inbox/{conversation}'
 */
 show.get = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
@@ -105,7 +105,7 @@ show.get = (args: { conversation: string | { id: string } } | [conversation: str
 /**
 * @see \App\Http\Controllers\ChatController::show
 * @see app/Http/Controllers/ChatController.php:59
-* @route '/chat/{conversation}'
+* @route '/inbox/{conversation}'
 */
 show.head = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
@@ -115,7 +115,7 @@ show.head = (args: { conversation: string | { id: string } } | [conversation: st
 /**
 * @see \App\Http\Controllers\ChatController::typing
 * @see app/Http/Controllers/ChatController.php:209
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 export const typing = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: typing.url(args, options),
@@ -124,13 +124,13 @@ export const typing = (args: { conversation: string | { id: string } } | [conver
 
 typing.definition = {
     methods: ["post"],
-    url: '/chat/{conversation}/typing',
+    url: '/inbox/{conversation}/typing',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\ChatController::typing
 * @see app/Http/Controllers/ChatController.php:209
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 typing.url = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -163,7 +163,7 @@ typing.url = (args: { conversation: string | { id: string } } | [conversation: s
 /**
 * @see \App\Http\Controllers\ChatController::typing
 * @see app/Http/Controllers/ChatController.php:209
-* @route '/chat/{conversation}/typing'
+* @route '/inbox/{conversation}/typing'
 */
 typing.post = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: typing.url(args, options),

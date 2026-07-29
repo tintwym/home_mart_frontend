@@ -233,14 +233,16 @@ async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
 
         if (!isPage) {
             if (res.ok) {
-                // GET that returns HTML/static (e.g. Vercel index.html) is a boot failure.
-                if (method === 'get' && !currentPage) {
+                // GET that returns HTML/static (e.g. Vercel index.html or an
+                // ad-blocked empty shell) is a failed page navigation — do not
+                // pretend the current page succeeded.
+                if (method === 'get') {
                     options.onError?.({
                         message: 'Server did not return an Inertia page.',
                     });
                     return;
                 }
-                // JSON endpoint hit through router (e.g. typing ping): treat as success.
+                // Non-GET JSON endpoint hit through router (e.g. typing ping).
                 if (currentPage) options.onSuccess?.(currentPage);
             } else {
                 const p = (payload ?? {}) as Record<string, unknown>;

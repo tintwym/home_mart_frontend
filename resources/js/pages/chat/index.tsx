@@ -118,7 +118,7 @@ export default function ChatIndex({ conversations }: Props) {
                                         return (
                                             <li key={conv.id}>
                                                 <Link
-                                                    href={`/chat/${conv.id}`}
+                                                    href={`/inbox/${conv.id}`}
                                                     className="flex items-center gap-3 rounded-lg p-3 transition-colors hover:bg-muted/50"
                                                 >
                                                     <div className="size-12 shrink-0 overflow-hidden rounded-full bg-muted">

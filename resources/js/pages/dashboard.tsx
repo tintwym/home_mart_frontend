@@ -335,11 +335,11 @@ export default function Dashboard({ listings = [] }: Props) {
                         variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        className="relative overflow-hidden rounded-2xl bg-[#123a3d] px-6 py-12 text-white sm:px-12 sm:py-20 lg:px-16"
+                        className="relative overflow-hidden rounded-2xl bg-nav-top px-6 py-12 text-white sm:px-12 sm:py-20 lg:px-16"
                     >
                         {/* Soft colourful atmosphere — mint / peach / sky */}
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,oklch(0.78_0.1_175_/_0.35),transparent_50%)]" />
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,oklch(0.82_0.08_55_/_0.28),transparent_45%)]" />
+                        <div className="absolute inset-0 bg-primary/25 mask-[radial-gradient(circle_at_top_right,black,transparent_50%)]" />
+                        <div className="absolute inset-0 bg-secondary/30 mask-[radial-gradient(circle_at_bottom_left,black,transparent_45%)]" />
                         <div className="absolute -top-16 right-1/4 size-72 rounded-full bg-accent/20 blur-3xl" />
                         <div className="absolute -bottom-20 -left-20 size-80 rounded-full bg-primary/25 blur-3xl" />
 

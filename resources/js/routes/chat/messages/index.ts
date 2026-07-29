@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefa
 /**
 * @see \App\Http\Controllers\ChatController::since
 * @see app/Http/Controllers/ChatController.php:171
-* @route '/chat/{conversation}/messages/since'
+* @route '/inbox/{conversation}/messages/since'
 */
 export const since = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: since.url(args, options),
@@ -11,13 +11,13 @@ export const since = (args: { conversation: string | { id: string } } | [convers
 
 since.definition = {
     methods: ["get","head"],
-    url: '/chat/{conversation}/messages/since',
+    url: '/inbox/{conversation}/messages/since',
 } satisfies RouteDefinition<["get","head"]>
 
 /**
 * @see \App\Http\Controllers\ChatController::since
 * @see app/Http/Controllers/ChatController.php:171
-* @route '/chat/{conversation}/messages/since'
+* @route '/inbox/{conversation}/messages/since'
 */
 since.url = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -50,7 +50,7 @@ since.url = (args: { conversation: string | { id: string } } | [conversation: st
 /**
 * @see \App\Http\Controllers\ChatController::since
 * @see app/Http/Controllers/ChatController.php:171
-* @route '/chat/{conversation}/messages/since'
+* @route '/inbox/{conversation}/messages/since'
 */
 since.get = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: since.url(args, options),
@@ -60,7 +60,7 @@ since.get = (args: { conversation: string | { id: string } } | [conversation: st
 /**
 * @see \App\Http\Controllers\ChatController::since
 * @see app/Http/Controllers/ChatController.php:171
-* @route '/chat/{conversation}/messages/since'
+* @route '/inbox/{conversation}/messages/since'
 */
 since.head = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: since.url(args, options),
@@ -70,7 +70,7 @@ since.head = (args: { conversation: string | { id: string } } | [conversation: s
 /**
 * @see \App\Http\Controllers\ChatController::store
 * @see app/Http/Controllers/ChatController.php:142
-* @route '/chat/{conversation}/messages'
+* @route '/inbox/{conversation}/messages'
 */
 export const store = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(args, options),
@@ -79,13 +79,13 @@ export const store = (args: { conversation: string | { id: string } } | [convers
 
 store.definition = {
     methods: ["post"],
-    url: '/chat/{conversation}/messages',
+    url: '/inbox/{conversation}/messages',
 } satisfies RouteDefinition<["post"]>
 
 /**
 * @see \App\Http\Controllers\ChatController::store
 * @see app/Http/Controllers/ChatController.php:142
-* @route '/chat/{conversation}/messages'
+* @route '/inbox/{conversation}/messages'
 */
 store.url = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
@@ -118,7 +118,7 @@ store.url = (args: { conversation: string | { id: string } } | [conversation: st
 /**
 * @see \App\Http\Controllers\ChatController::store
 * @see app/Http/Controllers/ChatController.php:142
-* @route '/chat/{conversation}/messages'
+* @route '/inbox/{conversation}/messages'
 */
 store.post = (args: { conversation: string | { id: string } } | [conversation: string | { id: string } ] | string | { id: string }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(args, options),

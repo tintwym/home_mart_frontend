@@ -17,7 +17,7 @@ import { LocationIndicator } from '@/components/location-indicator';
 import { CurrencySwitcher } from '@/components/currency-switcher';
 import { LogoutConfirmDialog } from '@/components/logout-confirm-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
     Collapsible,
     CollapsibleContent,
@@ -49,7 +49,7 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { useInitials } from '@/hooks/use-initials';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
 import { useTranslations } from '@/hooks/use-translations';
-import { toUrl } from '@/lib/utils';
+import { cn, toUrl } from '@/lib/utils';
 import { dashboard, login, register } from '@/routes';
 import { index as settingsIndex } from '@/routes/settings';
 import type {
@@ -349,136 +349,133 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                         </form>
                     </div>
 
-                    {/* Right: language (desktop only), chat, cart, profile */}
-                    <div className="flex shrink-0 items-center gap-1 md:gap-2">
-                        <div className="relative flex items-center space-x-1">
-                            <div className="flex items-center gap-1.5">
-                                <LocationIndicator />
-                                <CurrencySwitcher />
-                            </div>
-                            <TooltipProvider delayDuration={0}>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="group flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9 md:h-9 md:w-9"
-                                            aria-label={t('nav.chat')}
-                                            asChild
-                                        >
-                                            <Link
-                                                href="/chat"
-                                                className="relative"
-                                            >
-                                                <MessageCircle className="size-5! opacity-80 group-hover:opacity-100" />
-                                                {(auth?.chatUnreadCount ?? 0) >
-                                                    0 && (
-                                                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                        {(auth?.chatUnreadCount ??
-                                                            0) > 99
-                                                            ? '99+'
-                                                            : auth?.chatUnreadCount}
-                                                    </span>
-                                                )}
-                                            </Link>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>{t('nav.chat')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider delayDuration={0}>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="group relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9 md:h-9 md:w-9"
-                                            aria-label={t('nav.wishlist')}
-                                            asChild
-                                        >
-                                            <Link href="/favorites">
-                                                <Heart className="size-5! opacity-80 group-hover:opacity-100" />
-                                                {(auth?.favoriteListingIds
-                                                    ?.length ?? 0) > 0 && (
-                                                    <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                        {
-                                                            auth
-                                                                ?.favoriteListingIds
-                                                                ?.length
-                                                        }
-                                                    </span>
-                                                )}
-                                            </Link>
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>{t('nav.favorites')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider delayDuration={0}>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="group relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9 md:h-9 md:w-9"
-                                            aria-label={t('nav.cart')}
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                window.dispatchEvent(
-                                                    new CustomEvent(
-                                                        'open-cart-drawer',
-                                                    ),
-                                                );
-                                            }}
-                                        >
-                                            <ShoppingCart className="size-5! opacity-80 group-hover:opacity-100" />
-                                            {(auth?.cartCount ?? 0) > 0 && (
-                                                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-                                                    {(auth?.cartCount ?? 0) > 99
-                                                        ? '99+'
-                                                        : auth?.cartCount}
-                                                </span>
-                                            )}
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>{t('nav.cart')}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                            <div className="ml-1 hidden gap-1 md:flex">
-                                {rightNavItems.map((item) => (
-                                    <TooltipProvider
-                                        key={item.title}
-                                        delayDuration={0}
+                    {/* Right: region/currency, inbox, wishlist, cart, profile */}
+                    <div className="relative z-20 flex shrink-0 items-center gap-0.5 md:gap-2">
+                        <div className="hidden items-center gap-1.5 sm:flex">
+                            <LocationIndicator />
+                            <CurrencySwitcher />
+                        </div>
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href="/inbox"
+                                        className={cn(
+                                            buttonVariants({
+                                                variant: 'ghost',
+                                                size: 'icon',
+                                            }),
+                                            'relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9',
+                                        )}
+                                        aria-label={t('nav.chat')}
                                     >
-                                        <Tooltip>
-                                            <TooltipTrigger>
-                                                <a
-                                                    href={toUrl(item.href)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="group inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium text-accent-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                                >
-                                                    <span className="sr-only">
-                                                        {item.title}
-                                                    </span>
-                                                    {item.icon && (
-                                                        <item.icon className="size-5 opacity-80 group-hover:opacity-100" />
-                                                    )}
-                                                </a>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{item.title}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                ))}
-                            </div>
+                                        <MessageCircle className="size-5 opacity-80 group-hover:opacity-100" />
+                                        {(auth?.chatUnreadCount ?? 0) > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                                {(auth?.chatUnreadCount ?? 0) >
+                                                99
+                                                    ? '99+'
+                                                    : auth?.chatUnreadCount}
+                                            </span>
+                                        )}
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t('nav.chat')}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link
+                                        href="/favorites"
+                                        className={cn(
+                                            buttonVariants({
+                                                variant: 'ghost',
+                                                size: 'icon',
+                                            }),
+                                            'relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9',
+                                        )}
+                                        aria-label={t('nav.wishlist')}
+                                    >
+                                        <Heart className="size-5 opacity-80" />
+                                        {(auth?.favoriteListingIds?.length ??
+                                            0) > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                                {
+                                                    auth?.favoriteListingIds
+                                                        ?.length
+                                                }
+                                            </span>
+                                        )}
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t('nav.favorites')}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="relative flex h-11 min-h-11 w-11 min-w-11 cursor-pointer touch-manipulation sm:h-9 sm:w-9"
+                                        aria-label={t('nav.cart')}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            window.dispatchEvent(
+                                                new CustomEvent(
+                                                    'open-cart-drawer',
+                                                ),
+                                            );
+                                        }}
+                                    >
+                                        <ShoppingCart className="size-5 opacity-80" />
+                                        {(auth?.cartCount ?? 0) > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                                {(auth?.cartCount ?? 0) > 99
+                                                    ? '99+'
+                                                    : auth?.cartCount}
+                                            </span>
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{t('nav.cart')}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <div className="ml-1 hidden gap-1 md:flex">
+                            {rightNavItems.map((item) => (
+                                <TooltipProvider
+                                    key={item.title}
+                                    delayDuration={0}
+                                >
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <a
+                                                href={toUrl(item.href)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="group inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium text-accent-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
+                                            >
+                                                <span className="sr-only">
+                                                    {item.title}
+                                                </span>
+                                                {item.icon && (
+                                                    <item.icon className="size-5 opacity-80 group-hover:opacity-100" />
+                                                )}
+                                            </a>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{item.title}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            ))}
                         </div>
                         {/* Account menu: desktop/tablet only — mobile uses the hamburger sidebar */}
                         <div className="hidden md:block">
@@ -800,6 +797,18 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             ))}
                         </div>
                         <div className="flex flex-col gap-0.5 border-t border-sidebar-border pt-2">
+                            <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 sm:hidden">
+                                <LocationIndicator />
+                                <CurrencySwitcher />
+                            </div>
+                            <Link
+                                href="/inbox"
+                                onClick={() => setSheetOpen(false)}
+                                className="flex min-h-11 touch-manipulation items-center gap-2 rounded-md px-2 py-1.5 font-medium hover:bg-sidebar-accent"
+                            >
+                                <MessageCircle className="h-4 w-4" />
+                                <span>{t('nav.chat')}</span>
+                            </Link>
                             <Link
                                 href="/favorites"
                                 onClick={() => setSheetOpen(false)}
