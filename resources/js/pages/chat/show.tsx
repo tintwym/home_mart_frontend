@@ -104,7 +104,25 @@ type Props = {
     conversation: Conversation;
     messages: Message[];
     messages_has_more?: boolean;
+    poll_after?: string | null;
 };
+
+function getOtherParty(
+    conv: {
+        buyer: { id: string; name: string };
+        listing: {
+            user_id?: string;
+            user: { id: string; name: string } | null;
+        };
+    },
+    currentUserId: string | undefined,
+) {
+    const sellerId = conv.listing.user?.id ?? conv.listing.user_id;
+    if (currentUserId && sellerId && currentUserId === sellerId) {
+        return conv.buyer;
+    }
+    return conv.listing.user ?? conv.buyer;
+}
 
 function getCsrfToken(): string {
     return (
@@ -120,19 +138,29 @@ function ChatMessageList({
     initialMessages,
     currentUserId,
     otherTypingName,
+    pollAfter,
+    messagesHasMore,
 }: {
     conversationId: string;
     initialMessages: Message[];
     currentUserId: string | undefined;
     otherTypingName: string | null;
+    pollAfter?: string | null;
+    messagesHasMore?: boolean;
 }) {
     const { t } = useTranslations();
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [appendedMessages, setAppendedMessages] = useState<Message[]>([]);
-    const lastMessageCreatedRef = useRef<string | null>(null);
+    const [olderMessages, setOlderMessages] = useState<Message[]>([]);
+    const [hasMore, setHasMore] = useState(!!messagesHasMore);
+    const [loadingOlder, setLoadingOlder] = useState(false);
+    const lastMessageCreatedRef = useRef<string | null>(
+        pollAfter ?? null,
+    );
 
     const messages = useMemo(() => {
         const byId = new Map<string, Message>();
+        for (const m of olderMessages) byId.set(m.id, m);
         for (const m of initialMessages) byId.set(m.id, m);
         for (const m of appendedMessages) byId.set(m.id, m);
         return Array.from(byId.values()).sort(
@@ -140,19 +168,25 @@ function ChatMessageList({
                 new Date(a.created_at).getTime() -
                 new Date(b.created_at).getTime(),
         );
-    }, [initialMessages, appendedMessages]);
+    }, [olderMessages, initialMessages, appendedMessages]);
 
     useEffect(() => {
+        // Seed poll cursor even for empty threads so peer's first message arrives.
         if (messages.length > 0 && messages[messages.length - 1]?.created_at) {
             lastMessageCreatedRef.current =
                 messages[messages.length - 1].created_at;
+        } else if (pollAfter) {
+            lastMessageCreatedRef.current = pollAfter;
+        } else {
+            lastMessageCreatedRef.current = '1970-01-01T00:00:00.000000Z';
         }
-    }, [messages]);
+    }, [messages, pollAfter]);
 
     useEffect(() => {
         const interval = setInterval(async () => {
-            const after = lastMessageCreatedRef.current;
-            if (!after) return;
+            const after =
+                lastMessageCreatedRef.current ??
+                '1970-01-01T00:00:00.000000Z';
             try {
                 const res = await fetch(
                     `/chat/${conversationId}/messages/since?after=${encodeURIComponent(after)}`,
@@ -168,8 +202,9 @@ function ChatMessageList({
                 if (newMsgs.length > 0) {
                     setAppendedMessages((prev) => {
                         const ids = new Set(
-                            initialMessages
+                            olderMessages
                                 .map((m) => m.id)
+                                .concat(initialMessages.map((m) => m.id))
                                 .concat(prev.map((m) => m.id)),
                         );
                         const added = newMsgs.filter((m) => !ids.has(m.id));
@@ -184,14 +219,46 @@ function ChatMessageList({
             }
         }, 3000);
         return () => clearInterval(interval);
-    }, [conversationId, initialMessages]);
+    }, [conversationId, initialMessages, olderMessages]);
+
+    const loadOlder = async () => {
+        if (!hasMore || loadingOlder || messages.length === 0) return;
+        setLoadingOlder(true);
+        try {
+            const before = messages[0].created_at;
+            const res = await fetch(
+                `/chat/${conversationId}/messages/older?before=${encodeURIComponent(before)}`,
+                {
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' },
+                },
+            );
+            if (!res.ok) return;
+            const data = (await res.json()) as {
+                messages: Message[];
+                has_more: boolean;
+            };
+            setHasMore(!!data.has_more);
+            if (data.messages?.length) {
+                setOlderMessages((prev) => {
+                    const ids = new Set(prev.map((m) => m.id));
+                    return [
+                        ...data.messages.filter((m) => !ids.has(m.id)),
+                        ...prev,
+                    ];
+                });
+            }
+        } finally {
+            setLoadingOlder(false);
+        }
+    };
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
     useEffect(() => {
         scrollToBottom();
-    }, [messages]);
+    }, [appendedMessages, initialMessages]);
 
     const sortedMessages = messages;
     const messageGroups = sortedMessages.reduce<
@@ -215,6 +282,21 @@ function ChatMessageList({
                 </p>
             ) : (
                 <div className="space-y-4">
+                    {hasMore ? (
+                        <div className="flex justify-center">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                disabled={loadingOlder}
+                                onClick={() => void loadOlder()}
+                            >
+                                {loadingOlder
+                                    ? t('chat.loading_older')
+                                    : t('chat.load_older')}
+                            </Button>
+                        </div>
+                    ) : null}
                     {messageGroups.map(
                         (group: { date: string; msgs: Message[] }) => (
                             <div key={group.date}>
@@ -297,6 +379,8 @@ export default function ChatShow({
     conversations = [],
     conversation,
     messages: initialMessages,
+    messages_has_more = false,
+    poll_after = null,
 }: Props) {
     const { auth } = usePage<{ auth: { user?: { id: string } } }>().props;
     const { formatPrice, currency } = useCurrency();
@@ -360,8 +444,8 @@ export default function ChatShow({
         return () => clearInterval(interval);
     }, [conversation.id]);
 
-    // Show seller (listing owner) as the other party name
-    const otherUser = conversation.listing.user ?? conversation.buyer;
+    // Counterparty: seller sees buyer; buyer sees seller
+    const otherUser = getOtherParty(conversation, currentUserId);
 
     const submitOffer = (e: React.FormEvent) => {
         e.preventDefault();
@@ -401,7 +485,7 @@ export default function ChatShow({
             />
             <div className="-mx-4 flex h-[calc(100vh-7rem)] overflow-hidden sm:-mx-6 lg:-mx-8">
                 {/* Left panel - Chat list (hidden on mobile when viewing conversation) */}
-                <aside className="hidden w-full flex-col border-r border-border/50 bg-background md:flex md:w-[360px] md:shrink-0">
+                <aside className="hidden w-full flex-col border-r border-border/50 bg-background md:flex md:w-90 md:shrink-0">
                     <div className="flex items-center justify-between border-b border-border/50 px-4 py-4">
                         <h1 className="text-xl font-semibold">
                             {t('chat.inbox')}
@@ -421,8 +505,10 @@ export default function ChatShow({
                             </p>
                             <ul className="space-y-0.5">
                                 {conversations.map((conv) => {
-                                    const other =
-                                        conv.listing.user ?? conv.buyer;
+                                    const other = getOtherParty(
+                                        conv,
+                                        currentUserId,
+                                    );
                                     const lastMessage = conv.messages?.[0];
                                     const isActive =
                                         conv.id === conversation.id;
@@ -736,6 +822,8 @@ export default function ChatShow({
                                 initialMessages={initialMessages}
                                 currentUserId={currentUserId}
                                 otherTypingName={otherTypingName}
+                                pollAfter={poll_after}
+                                messagesHasMore={messages_has_more}
                             />
 
                             {/* Input - WhatsApp style */}

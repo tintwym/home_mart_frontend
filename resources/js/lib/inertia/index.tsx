@@ -107,6 +107,11 @@ function toFormData(data: Record<string, unknown>): FormData {
 }
 
 let visitCounter = 0;
+/**
+ * Stable React remount key for the page component.
+ * Updated on each visit unless preserveState keeps the same component mounted.
+ */
+let pageInstanceKey = 'boot';
 
 async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
     const method = (options.method || 'get').toLowerCase() as NonNullable<
@@ -169,12 +174,46 @@ async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
             headers,
             body,
             credentials: 'same-origin',
-            redirect: 'follow',
+            // Manual: POST /locale etc. return 303; auto-follow can break through
+            // the Vercel→Render proxy (405). Mirror real Inertia and re-GET.
+            redirect: 'manual',
         });
 
         // Inertia external redirect (e.g. Stripe Checkout).
         if (res.status === 409 && res.headers.get('X-Inertia-Location')) {
             window.location.href = res.headers.get('X-Inertia-Location')!;
+            return;
+        }
+
+        // Same-origin redirect (locale / region / currency / form saves).
+        if (res.status >= 300 && res.status < 400) {
+            const location = res.headers.get('Location');
+            if (location) {
+                const next = new URL(location, window.location.origin);
+                if (next.origin === window.location.origin) {
+                    await visit(next.pathname + next.search, {
+                        method: 'get',
+                        replace: true,
+                        preserveScroll: options.preserveScroll ?? true,
+                        onSuccess: options.onSuccess,
+                        onError: options.onError,
+                    });
+                    return;
+                }
+                window.location.href = next.href;
+                return;
+            }
+        }
+
+        // Opaque redirect (cross-origin) — fall back to current URL.
+        if (res.type === 'opaqueredirect' || res.status === 0) {
+            await visit(window.location.pathname + window.location.search, {
+                method: 'get',
+                replace: true,
+                preserveScroll: options.preserveScroll ?? true,
+                onSuccess: options.onSuccess,
+                onError: options.onError,
+            });
             return;
         }
 
@@ -193,23 +232,6 @@ async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
             'props' in (payload as object);
 
         if (!isPage) {
-            // POST → 303 often lands on the HTML shell after redirect follow.
-            // Re-request as Inertia so shared props (locale/region/currency) update.
-            if (res.ok && method !== 'get') {
-                const next =
-                    (res.redirected && res.url
-                        ? new URL(res.url).pathname + new URL(res.url).search
-                        : null) ||
-                    window.location.pathname + window.location.search;
-                await visit(next, {
-                    method: 'get',
-                    replace: true,
-                    preserveScroll: options.preserveScroll ?? true,
-                    onSuccess: options.onSuccess,
-                    onError: options.onError,
-                });
-                return;
-            }
             if (res.ok) {
                 // GET that returns HTML/static (e.g. Vercel index.html) is a boot failure.
                 if (method === 'get' && !currentPage) {
@@ -244,6 +266,17 @@ async function visit(href: Href, options: VisitOptions = {}): Promise<void> {
         if (id !== visitCounter) return;
 
         const page = payload as Page;
+        const prevComponent = currentPage?.component;
+        // Remount when component/url changes, unless preserveState keeps this
+        // component's React state (e.g. router.reload).
+        if (
+            !(
+                options.preserveState === true &&
+                prevComponent === page.component
+            )
+        ) {
+            pageInstanceKey = `${page.component}:${page.url}`;
+        }
         setCurrentPage(page);
 
         const sameUrl =
@@ -705,6 +738,7 @@ export async function createInertiaApp(
     if (dataPage) {
         try {
             currentPage = JSON.parse(dataPage) as Page;
+            pageInstanceKey = `${currentPage.component}:${currentPage.url}`;
         } catch {
             currentPage = null;
         }
@@ -813,7 +847,7 @@ export async function createInertiaApp(
 
         return (
             <PageContext.Provider value={viewPage}>
-                <Component key={viewPage.component} {...viewPage.props} />
+                <Component key={pageInstanceKey} {...viewPage.props} />
             </PageContext.Provider>
         );
     }

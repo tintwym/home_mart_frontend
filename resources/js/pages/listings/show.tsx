@@ -177,10 +177,13 @@ export default function ShowListing({
                 price: listing.price,
                 image_url: listing.image_url,
                 image_path: listing.image_path,
-                is_sold: false,
+                is_sold: !!listing.is_sold,
                 user_id: listing.user?.id,
                 user: listing.user
-                    ? { seller_type: listing.user.seller_type }
+                    ? {
+                          seller_type: listing.user.seller_type,
+                          region: listing.user.region,
+                      }
                     : null,
             };
 
@@ -219,7 +222,8 @@ export default function ShowListing({
         listing.trending_until && new Date(listing.trending_until) > new Date();
     const isBuyer = auth?.user && auth.user.id !== listing.user?.id;
     const isGuest = !auth?.user;
-    const showBuyerActions = !isOwner && (isBuyer || isGuest);
+    const isSold = !!listing.is_sold;
+    const showBuyerActions = !isOwner && !isSold && (isBuyer || isGuest);
     const isBusinessSeller = listing.user?.seller_type === 'business';
 
     const handleAddToCart = () => {
@@ -439,10 +443,10 @@ export default function ShowListing({
                                     </div>
                                 )}
 
-                                {listing.is_sold && (
+                                {isSold && (
                                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-xs">
                                         <span className="rounded-full border border-white/20 bg-black/70 px-6 py-1.5 text-xs font-black tracking-widest text-white uppercase shadow-2xl">
-                                            Sold Out
+                                            {t('favorites.sold_out')}
                                         </span>
                                     </div>
                                 )}
@@ -968,6 +972,12 @@ export default function ShowListing({
                                                       price: trendPriceLabel,
                                                   })}
                                         </Button>
+                                    </div>
+                                ) : isSold ? (
+                                    <div className="rounded-xl border border-zinc-200 bg-zinc-100/80 px-4 py-3 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
+                                        <p className="text-sm font-bold tracking-wide text-zinc-700 uppercase dark:text-zinc-200">
+                                            {t('favorites.sold_out')}
+                                        </p>
                                     </div>
                                 ) : (
                                     showBuyerActions && (

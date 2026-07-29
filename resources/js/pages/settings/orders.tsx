@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Package } from 'lucide-react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import { useCurrency } from '@/hooks/use-currency';
 import { useTranslations } from '@/hooks/use-translations';
@@ -38,31 +39,58 @@ type Props = {
     orders?: Order[];
 };
 
+/** Marketplace flow: reserved/pending → paid|arranged → completed */
 const STATUS_STEPS = [
-    { labelKey: 'orders.step_placed', key: 'pending' },
-    { labelKey: 'orders.step_processing', key: 'processing' },
-    { labelKey: 'orders.step_shipped', key: 'shipped' },
-    { labelKey: 'orders.step_delivered', key: 'delivered' },
+    { labelKey: 'orders.step_placed', key: 'reserved' },
+    { labelKey: 'orders.step_processing', key: 'confirmed' },
+    { labelKey: 'orders.status_completed', key: 'completed' },
 ];
+
+const HIDE_DELIVERY_MAP = new Set([
+    'arranged',
+    'paid',
+    'reserved',
+    'completed',
+]);
 
 const getStatusIndex = (status: string): number => {
     switch (status) {
         case 'pending':
+        case 'reserved':
             return 0;
-        case 'processing':
+        case 'paid':
+        case 'arranged':
             return 1;
-        case 'shipped':
+        case 'completed':
             return 2;
-        case 'delivered':
-            return 3;
+        case 'cancelled':
+            return -1;
         default:
             return -1;
+    }
+};
+
+const statusBadgeKey = (status: string): string | null => {
+    switch (status) {
+        case 'paid':
+            return 'orders.status_paid';
+        case 'arranged':
+            return 'orders.status_arranged';
+        case 'completed':
+            return 'orders.status_completed';
+        case 'reserved':
+            return 'orders.status_reserved';
+        case 'pending':
+            return 'orders.step_placed';
+        default:
+            return null;
     }
 };
 
 export default function Orders({ orders = [] }: Props) {
     const { t } = useTranslations();
     const { formatPrice } = useCurrency();
+    const [completingId, setCompletingId] = useState<string | null>(null);
 
     const breadcrumbs: BreadcrumbItem[] = [
         {
@@ -71,6 +99,27 @@ export default function Orders({ orders = [] }: Props) {
         },
         { title: t('orders.page_title') || 'Orders', href: '/settings/orders' },
     ];
+
+    const markComplete = async (orderId: string) => {
+        setCompletingId(orderId);
+        try {
+            const res = await fetch(`/api/orders/${orderId}/complete`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: '{}',
+            });
+            if (res.ok) {
+                router.reload({ only: ['orders'] });
+            }
+        } finally {
+            setCompletingId(null);
+        }
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -106,6 +155,11 @@ export default function Orders({ orders = [] }: Props) {
                             const currentStepIndex = getStatusIndex(
                                 order.status,
                             );
+                            const badgeKey = statusBadgeKey(order.status);
+                            const canComplete =
+                                order.status === 'paid' ||
+                                order.status === 'arranged';
+                            const hideMap = HIDE_DELIVERY_MAP.has(order.status);
 
                             return (
                                 <div
@@ -159,17 +213,19 @@ export default function Orders({ orders = [] }: Props) {
                                                         )}
                                                     </span>
                                                     <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 capitalize dark:text-emerald-400">
-                                                        {order.status}
+                                                        {badgeKey
+                                                            ? t(badgeKey)
+                                                            : order.status}
                                                     </span>
                                                 </div>
 
                                                 {/* Visual Timeline Bar */}
                                                 <div className="relative flex items-center justify-between px-2 pt-4">
                                                     {/* Horizontal Line background */}
-                                                    <div className="absolute top-[28px] right-6 left-6 z-0 h-1 bg-muted dark:bg-muted/40" />
+                                                    <div className="absolute top-7 right-6 left-6 z-0 h-1 bg-muted dark:bg-muted/40" />
                                                     {/* Horizontal Line progress fill */}
                                                     <div
-                                                        className="absolute top-[28px] left-6 z-0 h-1 bg-emerald-500 transition-all duration-500"
+                                                        className="absolute top-7 left-6 z-0 h-1 bg-emerald-500 transition-all duration-500"
                                                         style={{
                                                             width: `${currentStepIndex >= 0 ? (currentStepIndex / (STATUS_STEPS.length - 1)) * 100 : 0}%`,
                                                             maxWidth:
@@ -241,11 +297,22 @@ export default function Orders({ orders = [] }: Props) {
                                             </div>
                                         )}
 
-                                        {!isCancelled && (
+                                        {!isCancelled && !hideMap && (
                                             <OrderDeliveryMap
                                                 orderId={order.id}
                                                 status={order.status}
                                             />
+                                        )}
+                                        {order.status === 'arranged' && (
+                                            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                                                {t('orders.status_arranged')} —{' '}
+                                                {t('checkout.c2c_confirm_hint')}
+                                            </div>
+                                        )}
+                                        {order.status === 'paid' && (
+                                            <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-foreground">
+                                                {t('orders.test_payment_hint')}
+                                            </div>
                                         )}
 
                                         {/* Order Items */}
@@ -343,14 +410,28 @@ export default function Orders({ orders = [] }: Props) {
                                                     {t('orders.total_amount')}
                                                 </p>
                                                 <p className="mt-0.5 text-lg font-bold text-foreground">
-                                                    {formatPrice(
-                                                        order.total,
-                                                        order.items[0]?.listing
-                                                            ?.user?.region,
-                                                    )}
+                                                    {formatPrice(order.total)}
                                                 </p>
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                {canComplete && (
+                                                    <Button
+                                                        size="sm"
+                                                        disabled={
+                                                            completingId ===
+                                                            order.id
+                                                        }
+                                                        onClick={() =>
+                                                            markComplete(
+                                                                order.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        {t(
+                                                            'orders.mark_complete',
+                                                        )}
+                                                    </Button>
+                                                )}
                                                 <Button
                                                     variant="outline"
                                                     size="sm"

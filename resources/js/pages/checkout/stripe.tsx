@@ -34,6 +34,9 @@ type OrderItem = {
         image_path: string | null;
         image_url?: string | null;
         price: number;
+        user?: {
+            region?: string | null;
+        } | null;
     };
 };
 
@@ -41,20 +44,43 @@ type Order = {
     id: string;
     total: number;
     items: OrderItem[];
+    /** Present when backend created a Stripe Checkout Session for this order. */
+    stripe_session_id?: string | null;
 };
 
 type Props = {
     clientSecret: string;
     order: Order;
     stripePublishableKey: string;
+    /** Optional alias if backend passes session id at the page root. */
+    stripeSessionId?: string | null;
 };
 
-function CheckoutForm({ order }: { order: Order }) {
+function checkoutSuccessUrl(sessionId: string | null | undefined): string {
+    // Backend GET /checkout/success requires session_id (hosted Checkout Session).
+    // Align with CartPagesController / StripeController success URLs.
+    // Payment Element without a session id cannot complete via that endpoint —
+    // production checkout uses hosted Stripe Checkout which redirects with session_id.
+    if (sessionId) {
+        return `${window.location.origin}/checkout/success?session_id=${encodeURIComponent(sessionId)}`;
+    }
+    return `${window.location.origin}/checkout/success`;
+}
+
+function CheckoutForm({
+    order,
+    stripeSessionId,
+}: {
+    order: Order;
+    stripeSessionId?: string | null;
+}) {
     const stripe = useStripe();
     const elements = useElements();
     const { t } = useTranslations();
     const [error, setError] = useState<string | null>(null);
     const [processing, setProcessing] = useState(false);
+
+    const sessionId = stripeSessionId ?? order.stripe_session_id ?? null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,7 +92,7 @@ function CheckoutForm({ order }: { order: Order }) {
         const { error: submitError } = await stripe.confirmPayment({
             elements,
             confirmParams: {
-                return_url: `${window.location.origin}/checkout/success?order_id=${order.id}`,
+                return_url: checkoutSuccessUrl(sessionId),
                 receipt_email: undefined,
             },
         });
@@ -150,6 +176,7 @@ export default function CheckoutStripe({
     clientSecret,
     order,
     stripePublishableKey,
+    stripeSessionId,
 }: Props) {
     // Memoize so Stripe isn't re-initialized (and PaymentElement reset) on re-renders
     const stripePromise = useMemo(
@@ -328,7 +355,10 @@ export default function CheckoutStripe({
                                 // PaymentIntent (clientSecret); they can't be overridden here.
                             }}
                         >
-                            <CheckoutForm order={order} />
+                            <CheckoutForm
+                                order={order}
+                                stripeSessionId={stripeSessionId}
+                            />
                         </Elements>
                     </div>
 
@@ -366,6 +396,9 @@ export default function CheckoutStripe({
                                         <p className="text-xs text-muted-foreground">
                                             <CurrencyFormatter
                                                 amount={item.price}
+                                                sellerRegion={
+                                                    item.listing.user?.region
+                                                }
                                             />{' '}
                                             × {item.quantity}
                                         </p>

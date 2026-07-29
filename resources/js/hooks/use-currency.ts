@@ -22,6 +22,29 @@ const LOCALE_TAGS: Record<string, string> = {
     ja: 'ja-JP',
 };
 
+function toNumber(value: unknown, fallback = 0): number {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string' && value.trim() !== '') {
+        const n = Number(value);
+        if (Number.isFinite(n)) return n;
+    }
+    return fallback;
+}
+
+function normalizeRates(
+    raw: Record<string, unknown> | undefined,
+): Record<string, number> {
+    const out: Record<string, number> = { ...defaultRates };
+    if (!raw) return out;
+    for (const [code, value] of Object.entries(raw)) {
+        const n = toNumber(value, NaN);
+        if (Number.isFinite(n) && n > 0) {
+            out[code] = n;
+        }
+    }
+    return out;
+}
+
 export function useCurrency() {
     const page = usePage<SharedData>();
     const currency: SharedCurrency =
@@ -29,10 +52,21 @@ export function useCurrency() {
     const currencies =
         (page.props.currencies as Record<string, SharedCurrency> | undefined) ??
         {};
-    const rates =
-        (page.props.exchangeRates as Record<string, number> | undefined) ??
-        defaultRates;
+    const rates = normalizeRates(
+        page.props.exchangeRates as Record<string, unknown> | undefined,
+    );
     const localeTag = LOCALE_TAGS[page.props.locale ?? 'en'] ?? 'en-US';
+
+    /** Resolve a currency code from a seller region (MM) or currency code (MMK). */
+    function resolveCurrencyCode(
+        sellerRegionOrCode?: string | null,
+    ): string {
+        if (!sellerRegionOrCode) return 'USD';
+        const key = sellerRegionOrCode.trim();
+        if (rates[key]) return key;
+        if (currencies[key]?.code) return currencies[key]!.code;
+        return 'USD';
+    }
 
     /**
      * Convert an amount from one currency into the viewer's display currency
@@ -68,15 +102,12 @@ export function useCurrency() {
         amount: number | string,
         sellerRegion?: string | null,
     ): string {
-        const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+        const num = toNumber(amount, NaN);
         if (Number.isNaN(num)) {
             return `${currency.symbol}0`;
         }
 
-        const sourceCode =
-            sellerRegion && currencies[sellerRegion]
-                ? currencies[sellerRegion]!.code
-                : 'USD';
+        const sourceCode = resolveCurrencyCode(sellerRegion);
         const converted = convert(num, sourceCode);
         return formatAmount(converted);
     }
@@ -86,13 +117,26 @@ export function useCurrency() {
         amount: number | string,
         sellerRegion?: string | null,
     ): number {
-        const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+        const num = toNumber(amount, NaN);
         if (Number.isNaN(num)) return 0;
-        const sourceCode =
-            sellerRegion && currencies[sellerRegion]
-                ? currencies[sellerRegion]!.code
-                : 'USD';
-        return convert(num, sourceCode);
+        return convert(num, resolveCurrencyCode(sellerRegion));
+    }
+
+    /**
+     * Convert a listing price to USD for filters/sort that use USD-based bands
+     * (so MMK/VND shoppers still see US-priced catalog items).
+     */
+    function toUsdAmount(
+        amount: number | string,
+        sellerRegion?: string | null,
+    ): number {
+        const num = toNumber(amount, NaN);
+        if (Number.isNaN(num)) return 0;
+        const sourceCode = resolveCurrencyCode(sellerRegion);
+        if (sourceCode === 'USD') return num;
+        const fromRate = rates[sourceCode];
+        if (!fromRate) return num;
+        return num / fromRate;
     }
 
     return {
@@ -103,5 +147,7 @@ export function useCurrency() {
         formatPrice,
         formatAmount,
         toDisplayAmount,
+        toUsdAmount,
+        resolveCurrencyCode,
     };
 }

@@ -54,6 +54,10 @@
       "destination": "https://home-mart-backend.onrender.com/chat/:id/messages/since"
     },
     {
+      "source": "/chat/:id/messages/older",
+      "destination": "https://home-mart-backend.onrender.com/chat/:id/messages/older"
+    },
+    {
       "source": "/chat/:id/typing",
       "destination": "https://home-mart-backend.onrender.com/chat/:id/typing"
     },

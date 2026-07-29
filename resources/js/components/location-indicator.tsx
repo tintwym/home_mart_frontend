@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useLocalization } from './localization-provider';
-import { Globe, Check, MapPin } from 'lucide-react';
+import { Globe, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -57,25 +56,6 @@ const LOCALES = [
 
 export function LocationIndicator() {
     const { region, locale, setRegion, setLocale, t } = useLocalization();
-    const [hasGps, setHasGps] = useState(false);
-    const [gpsCoords, setGpsCoords] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (typeof document !== 'undefined') {
-            const cookies = document.cookie.split('; ');
-            const gpsCookie = cookies.find((row) =>
-                row.startsWith('user_gps='),
-            );
-            if (gpsCookie) {
-                const val = decodeURIComponent(gpsCookie.split('=')[1]);
-                const timer = setTimeout(() => {
-                    setHasGps(true);
-                    setGpsCoords(val);
-                }, 0);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [region]);
 
     const currentRegionInfo =
         REGIONS.find((r) => r.code === region) || REGIONS[3];
@@ -98,9 +78,6 @@ export function LocationIndicator() {
                         {currentRegionInfo.code} /{' '}
                         {currentLocaleInfo.code.toUpperCase()}
                     </span>
-                    {hasGps && (
-                        <MapPin className="hidden size-3 shrink-0 animate-pulse text-emerald-500 md:inline-block" />
-                    )}
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -150,20 +127,6 @@ export function LocationIndicator() {
                         )}
                     </DropdownMenuItem>
                 ))}
-
-                {hasGps && (
-                    <>
-                        <DropdownMenuSeparator className="my-1.5" />
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
-                            <MapPin className="size-3" />
-                            <span>
-                                {t('region.gps_active', {
-                                    coords: gpsCoords ?? '',
-                                })}
-                            </span>
-                        </div>
-                    </>
-                )}
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -97,115 +97,13 @@ const cardItemVariants: Variants = {
     },
 };
 
-const getListingAttributes = (listing: ListingCardListing) => {
-    const title = (listing.title || '').toLowerCase();
-    const id = listing.id || '';
-
-    // 1. Brand Deterministic Mapping
-    let brand = 'West Elm';
-    if (title.includes('sofa') || title.includes('couch')) {
-        brand = id.charCodeAt(0) % 2 === 0 ? 'Herman Miller' : 'Knoll';
-    } else if (title.includes('desk') || title.includes('chair')) {
-        brand = id.charCodeAt(1) % 2 === 0 ? 'IKEA' : 'Muuto';
-    } else {
-        const brands = [
-            'Herman Miller',
-            'Knoll',
-            'IKEA',
-            'Muuto',
-            'Hay',
-            'West Elm',
-            'CB2',
-        ];
-        const index =
-            Math.abs(
-                id
-                    .split('')
-                    .reduce(
-                        (acc: number, char: string) => acc + char.charCodeAt(0),
-                        0,
-                    ),
-            ) % brands.length;
-        brand = brands[index];
-    }
-
-    // 2. Material Deterministic Mapping
-    let material = 'Oak Wood';
-    if (title.includes('leather')) {
-        material = 'Genuine Leather';
-    } else if (title.includes('velvet') || title.includes('sofa')) {
-        material = 'Velvet';
-    } else if (title.includes('table') || title.includes('desk')) {
-        material = id.charCodeAt(2) % 2 === 0 ? 'Walnut Wood' : 'Oak Wood';
-    } else if (title.includes('metal') || title.includes('steel')) {
-        material = 'Steel';
-    } else {
-        const materials = [
-            'Walnut Wood',
-            'Oak Wood',
-            'Genuine Leather',
-            'Velvet',
-            'Steel',
-            'Bouclé',
-            'Glass',
-        ];
-        const index =
-            Math.abs(
-                id
-                    .split('')
-                    .reduce(
-                        (acc: number, char: string) => acc + char.charCodeAt(0),
-                        0,
-                    ),
-            ) % materials.length;
-        material = materials[index];
-    }
-
-    // 3. Dimensions Deterministic Mapping
-    let dimensions = 'Standard (40" - 70")';
-    if (
-        title.includes('sofa') ||
-        title.includes('table') ||
-        title.includes('desk')
-    ) {
-        dimensions =
-            id.charCodeAt(3) % 2 === 0
-                ? 'Grand (Over 70")'
-                : 'Standard (40" - 70")';
-    } else if (
-        title.includes('chair') ||
-        title.includes('lamp') ||
-        title.includes('mirror')
-    ) {
-        dimensions = 'Compact (Under 40")';
-    } else {
-        const dims = [
-            'Compact (Under 40")',
-            'Standard (40" - 70")',
-            'Grand (Over 70")',
-        ];
-        const index =
-            Math.abs(
-                id
-                    .split('')
-                    .reduce(
-                        (acc: number, char: string) => acc + char.charCodeAt(0),
-                        0,
-                    ),
-            ) % dims.length;
-        dimensions = dims[index];
-    }
-
-    return { brand, material, dimensions };
-};
-
 type Props = {
     listings: ListingCardListing[];
 };
 
 export default function Dashboard({ listings = [] }: Props) {
     const { t } = useTranslations();
-    const { formatPrice, toDisplayAmount } = useCurrency();
+    const { formatPrice, toUsdAmount } = useCurrency();
     const { url, props: sharedProps } = usePage<SharedData>();
     const categories = sharedProps.categories || [];
 
@@ -221,15 +119,12 @@ export default function Dashboard({ listings = [] }: Props) {
     const [availabilityFilter, setAvailabilityFilter] = useState<
         'all' | 'available' | 'sold'
     >('all');
-    const [maxPrice, setMaxPrice] = useState<number>(100000); // 100,000 max price threshold
+    // Max price filter is stored in USD so region/currency switches don't hide listings.
+    const [maxPrice, setMaxPrice] = useState<number>(100000);
     const [priceRange, setPriceRange] = useState<
         'all' | 'under-200' | '200-500' | '500-1500' | '1500-5000' | '5000-plus'
     >('all');
 
-    // Brand, material, dimensions filters
-    const [selectedBrand, setSelectedBrand] = useState<string>('all');
-    const [selectedMaterial, setSelectedMaterial] = useState<string>('all');
-    const [selectedDimensions, setSelectedDimensions] = useState<string>('all');
     const [recentlyViewed, setRecentlyViewed] = useState<ListingCardListing[]>(
         () => {
             if (typeof window !== 'undefined') {
@@ -301,73 +196,49 @@ export default function Dashboard({ listings = [] }: Props) {
             list = list.filter((l) => l.is_sold);
         }
 
-        // 3. Price Filter Threshold (compare in display currency)
+        // 3. Price Filter Threshold (USD bands — independent of shopper currency)
         list = list.filter(
-            (l) => toDisplayAmount(l.price, l.user?.region) <= maxPrice,
+            (l) => toUsdAmount(l.price, l.user?.region) <= maxPrice,
         );
 
-        // 3.5 Predefined Price Range Filter
+        // 3.5 Predefined Price Range Filter (USD)
         if (priceRange === 'under-200') {
             list = list.filter(
-                (l) => toDisplayAmount(l.price, l.user?.region) < 200,
+                (l) => toUsdAmount(l.price, l.user?.region) < 200,
             );
         } else if (priceRange === '200-500') {
             list = list.filter((l) => {
-                const p = toDisplayAmount(l.price, l.user?.region);
+                const p = toUsdAmount(l.price, l.user?.region);
                 return p >= 200 && p <= 500;
             });
         } else if (priceRange === '500-1500') {
             list = list.filter((l) => {
-                const p = toDisplayAmount(l.price, l.user?.region);
+                const p = toUsdAmount(l.price, l.user?.region);
                 return p >= 500 && p <= 1500;
             });
         } else if (priceRange === '1500-5000') {
             list = list.filter((l) => {
-                const p = toDisplayAmount(l.price, l.user?.region);
+                const p = toUsdAmount(l.price, l.user?.region);
                 return p >= 1500 && p <= 5000;
             });
         } else if (priceRange === '5000-plus') {
             list = list.filter(
-                (l) => toDisplayAmount(l.price, l.user?.region) > 5000,
+                (l) => toUsdAmount(l.price, l.user?.region) > 5000,
             );
         }
 
-        // 3.6 Brand Filter
-        if (selectedBrand !== 'all') {
-            list = list.filter((l) => {
-                const attrs = getListingAttributes(l);
-                return attrs.brand === selectedBrand;
-            });
-        }
-
-        // 3.7 Material Filter
-        if (selectedMaterial !== 'all') {
-            list = list.filter((l) => {
-                const attrs = getListingAttributes(l);
-                return attrs.material === selectedMaterial;
-            });
-        }
-
-        // 3.8 Dimensions Filter
-        if (selectedDimensions !== 'all') {
-            list = list.filter((l) => {
-                const attrs = getListingAttributes(l);
-                return attrs.dimensions === selectedDimensions;
-            });
-        }
-
-        // 4. Sorting logic
+        // 4. Sorting logic (USD so mixed-region catalogs sort by real value)
         if (sortOption === 'price-low') {
             list.sort(
                 (a, b) =>
-                    toDisplayAmount(a.price, a.user?.region) -
-                    toDisplayAmount(b.price, b.user?.region),
+                    toUsdAmount(a.price, a.user?.region) -
+                    toUsdAmount(b.price, b.user?.region),
             );
         } else if (sortOption === 'price-high') {
             list.sort(
                 (a, b) =>
-                    toDisplayAmount(b.price, b.user?.region) -
-                    toDisplayAmount(a.price, a.user?.region),
+                    toUsdAmount(b.price, b.user?.region) -
+                    toUsdAmount(a.price, a.user?.region),
             );
         } else if (sortOption === 'recent') {
             list.sort((a, b) => {
@@ -407,12 +278,23 @@ export default function Dashboard({ listings = [] }: Props) {
         availabilityFilter,
         maxPrice,
         priceRange,
-        selectedBrand,
-        selectedMaterial,
-        selectedDimensions,
         now,
-        toDisplayAmount,
+        toUsdAmount,
     ]);
+
+    const hasActiveFilters =
+        selectedCategory !== 'all' ||
+        sortOption !== 'default' ||
+        availabilityFilter !== 'all' ||
+        maxPrice !== 100000 ||
+        priceRange !== 'all';
+
+    const activeFilterCount =
+        (selectedCategory !== 'all' ? 1 : 0) +
+        (sortOption !== 'default' ? 1 : 0) +
+        (availabilityFilter !== 'all' ? 1 : 0) +
+        (maxPrice !== 100000 ? 1 : 0) +
+        (priceRange !== 'all' ? 1 : 0);
 
     const resetFilters = () => {
         handleFilterChange(() => {
@@ -421,9 +303,6 @@ export default function Dashboard({ listings = [] }: Props) {
             setAvailabilityFilter('all');
             setMaxPrice(100000);
             setPriceRange('all');
-            setSelectedBrand('all');
-            setSelectedMaterial('all');
-            setSelectedDimensions('all');
         });
     };
 
@@ -874,125 +753,6 @@ export default function Dashboard({ listings = [] }: Props) {
                                 </div>
                             </div>
 
-                            {/* Brand Filter */}
-                            <div className="space-y-3 border-b border-zinc-200/60 py-4 dark:border-zinc-800/40">
-                                <h3 className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                    {t('dashboard.brand')}
-                                </h3>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {[
-                                        'all',
-                                        'Herman Miller',
-                                        'Knoll',
-                                        'IKEA',
-                                        'Muuto',
-                                        'Hay',
-                                        'West Elm',
-                                        'CB2',
-                                    ].map((brand) => (
-                                        <button
-                                            key={brand}
-                                            onClick={() =>
-                                                handleFilterChange(() =>
-                                                    setSelectedBrand(brand),
-                                                )
-                                            }
-                                            className={cn(
-                                                'cursor-pointer rounded-md border px-2 py-1 text-[11px] font-semibold transition-all',
-                                                selectedBrand === brand
-                                                    ? 'animate-xs border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                                                    : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200',
-                                            )}
-                                        >
-                                            {brand === 'all'
-                                                ? t('dashboard.all')
-                                                : brand}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Material Filter */}
-                            <div className="space-y-3 border-b border-zinc-200/60 py-4 dark:border-zinc-800/40">
-                                <h3 className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                    {t('dashboard.material')}
-                                </h3>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {[
-                                        'all',
-                                        'Walnut Wood',
-                                        'Oak Wood',
-                                        'Genuine Leather',
-                                        'Velvet',
-                                        'Steel',
-                                        'Bouclé',
-                                        'Glass',
-                                    ].map((material) => (
-                                        <button
-                                            key={material}
-                                            onClick={() =>
-                                                handleFilterChange(() =>
-                                                    setSelectedMaterial(
-                                                        material,
-                                                    ),
-                                                )
-                                            }
-                                            className={cn(
-                                                'cursor-pointer rounded-md border px-2 py-1 text-[11px] font-semibold transition-all',
-                                                selectedMaterial === material
-                                                    ? 'animate-xs border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                                                    : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200',
-                                            )}
-                                        >
-                                            {material === 'all'
-                                                ? t('dashboard.all')
-                                                : material}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Dimensions Filter */}
-                            <div className="space-y-3 border-b border-zinc-200/60 py-4 dark:border-zinc-800/40">
-                                <h3 className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                    {t('dashboard.dimensions')}
-                                </h3>
-                                <div className="flex flex-col gap-1">
-                                    {[
-                                        'all',
-                                        'Compact (Under 40")',
-                                        'Standard (40" - 70")',
-                                        'Grand (Over 70")',
-                                    ].map((dim) => (
-                                        <button
-                                            key={dim}
-                                            onClick={() =>
-                                                handleFilterChange(() =>
-                                                    setSelectedDimensions(dim),
-                                                )
-                                            }
-                                            className={cn(
-                                                'flex min-h-8.5 cursor-pointer items-center justify-between rounded-md px-2 text-xs font-semibold transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800',
-                                                selectedDimensions === dim
-                                                    ? 'bg-zinc-100 text-zinc-950 dark:bg-zinc-800 dark:text-white'
-                                                    : 'text-zinc-600 dark:text-zinc-400',
-                                            )}
-                                        >
-                                            <span>
-                                                {dim === 'all'
-                                                    ? t(
-                                                          'dashboard.all_dimensions',
-                                                      )
-                                                    : dim}
-                                            </span>
-                                            {selectedDimensions === dim && (
-                                                <Check className="size-3.5 text-primary" />
-                                            )}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
                             {/* Price range filter */}
                             <div className="space-y-3 py-4">
                                 <div className="flex items-center justify-between">
@@ -1142,10 +902,7 @@ export default function Dashboard({ listings = [] }: Props) {
                             </div>
 
                             {/* Reset state helper */}
-                            {(selectedCategory !== 'all' ||
-                                sortOption !== 'default' ||
-                                availabilityFilter !== 'all' ||
-                                maxPrice !== 100000) && (
+                            {hasActiveFilters && (
                                 <button
                                     onClick={resetFilters}
                                     className="self-start text-xs font-medium text-primary hover:underline sm:self-auto"
@@ -1209,15 +966,9 @@ export default function Dashboard({ listings = [] }: Props) {
                         <SlidersHorizontal className="size-4 text-primary" />
                         <span>{t('dashboard.quick_filters')}</span>
                         {/* Active filter counter badge */}
-                        {(selectedCategory !== 'all' ||
-                            sortOption !== 'default' ||
-                            availabilityFilter !== 'all' ||
-                            maxPrice < 100000) && (
+                        {hasActiveFilters && (
                             <span className="flex size-5 animate-pulse items-center justify-center rounded-full bg-primary text-[10px] font-extrabold text-white">
-                                {(selectedCategory !== 'all' ? 1 : 0) +
-                                    (sortOption !== 'default' ? 1 : 0) +
-                                    (availabilityFilter !== 'all' ? 1 : 0) +
-                                    (maxPrice < 100000 ? 1 : 0)}
+                                {activeFilterCount}
                             </span>
                         )}
                     </motion.button>
@@ -1475,129 +1226,6 @@ export default function Dashboard({ listings = [] }: Props) {
                                             <span>{formatPrice(100000)}</span>
                                         </div>
                                     </div>
-
-                                    {/* Mobile Brand Filter */}
-                                    <div className="space-y-2">
-                                        <h4 className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                            {t('dashboard.brand')}
-                                        </h4>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {[
-                                                'all',
-                                                'Herman Miller',
-                                                'Knoll',
-                                                'IKEA',
-                                                'Muuto',
-                                                'Hay',
-                                                'West Elm',
-                                                'CB2',
-                                            ].map((brand) => (
-                                                <button
-                                                    key={brand}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleFilterChange(() =>
-                                                            setSelectedBrand(
-                                                                brand,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className={cn(
-                                                        'rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all',
-                                                        selectedBrand === brand
-                                                            ? 'border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                                                            : 'border-zinc-200/60 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-                                                    )}
-                                                >
-                                                    {brand === 'all'
-                                                        ? 'All Brands'
-                                                        : brand}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Mobile Material Filter */}
-                                    <div className="space-y-2">
-                                        <h4 className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                            Material
-                                        </h4>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {[
-                                                'all',
-                                                'Walnut Wood',
-                                                'Oak Wood',
-                                                'Genuine Leather',
-                                                'Velvet',
-                                                'Steel',
-                                                'Bouclé',
-                                                'Glass',
-                                            ].map((material) => (
-                                                <button
-                                                    key={material}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleFilterChange(() =>
-                                                            setSelectedMaterial(
-                                                                material,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className={cn(
-                                                        'rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all',
-                                                        selectedMaterial ===
-                                                            material
-                                                            ? 'border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                                                            : 'border-zinc-200/60 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-                                                    )}
-                                                >
-                                                    {material === 'all'
-                                                        ? 'All Materials'
-                                                        : material}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Mobile Dimensions Filter */}
-                                    <div className="space-y-2">
-                                        <h4 className="text-xs font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
-                                            {t('dashboard.dimensions')}
-                                        </h4>
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {[
-                                                'all',
-                                                'Compact (Under 40")',
-                                                'Standard (40" - 70")',
-                                                'Grand (Over 70")',
-                                            ].map((dim) => (
-                                                <button
-                                                    key={dim}
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleFilterChange(() =>
-                                                            setSelectedDimensions(
-                                                                dim,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className={cn(
-                                                        'rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all',
-                                                        selectedDimensions ===
-                                                            dim
-                                                            ? 'border-zinc-950 bg-zinc-950 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-950'
-                                                            : 'border-zinc-200/60 bg-zinc-50 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-                                                    )}
-                                                >
-                                                    {dim === 'all'
-                                                        ? t(
-                                                              'dashboard.all_dimensions',
-                                                          )
-                                                        : dim}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
                                 </div>
 
                                 {/* Footer CTA */}
@@ -1637,7 +1265,7 @@ export default function Dashboard({ listings = [] }: Props) {
                                         damping: 20,
                                         stiffness: 300,
                                     }}
-                                    className="relative z-45 mb-3 flex min-w-[210px] flex-col gap-1.5 rounded-2xl border border-zinc-200/80 bg-white/95 p-3 shadow-xl backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/95"
+                                    className="relative z-45 mb-3 flex min-w-52.5 flex-col gap-1.5 rounded-2xl border border-zinc-200/80 bg-white/95 p-3 shadow-xl backdrop-blur-md dark:border-zinc-800/80 dark:bg-zinc-900/95"
                                 >
                                     <div className="mb-1.5 border-b border-zinc-100 px-2 pb-1.5 dark:border-zinc-800/80">
                                         <p className="text-[10px] font-bold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">

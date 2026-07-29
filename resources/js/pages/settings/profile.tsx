@@ -290,6 +290,9 @@ export default function Profile({
                                         <option value="MM">
                                             {t('profile.region_mm')}
                                         </option>
+                                        <option value="VN">
+                                            {t('profile.region_vn')}
+                                        </option>
                                         <option value="US">
                                             {t('profile.region_us')}
                                         </option>

@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { MessageCircle, Search } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslations } from '@/hooks/use-translations';
@@ -50,13 +50,26 @@ function formatChatDate(
 
 export default function ChatIndex({ conversations }: Props) {
     const { t } = useTranslations();
+    const { auth } = usePage<{ auth: { user?: { id: string } } }>().props;
+    const currentUserId = auth?.user?.id;
+
+    const otherParty = (
+        conv: Conversation,
+        userId: string | undefined,
+    ) => {
+        const sellerId = conv.listing.user?.id ?? conv.listing.user_id;
+        if (userId && sellerId && userId === sellerId) {
+            return conv.buyer;
+        }
+        return conv.listing.user ?? conv.buyer;
+    };
 
     return (
         <AppLayout breadcrumbs={[]}>
             <Head title={t('chat.inbox')} />
             <div className="-mx-4 flex h-[calc(100vh-7rem)] overflow-hidden sm:-mx-6 lg:-mx-8">
                 {/* Left panel - Chat list */}
-                <aside className="flex w-full flex-col border-r border-border/50 bg-background md:w-[360px] md:shrink-0">
+                <aside className="flex w-full flex-col border-r border-border/50 bg-background md:w-90 md:shrink-0">
                     <div className="flex items-center justify-between border-b border-border/50 px-4 py-4">
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl font-semibold">
@@ -97,8 +110,10 @@ export default function ChatIndex({ conversations }: Props) {
                             ) : (
                                 <ul className="space-y-0.5">
                                     {conversations.map((conv) => {
-                                        const otherUser =
-                                            conv.listing.user ?? conv.buyer;
+                                        const otherUser = otherParty(
+                                            conv,
+                                            currentUserId,
+                                        );
                                         const lastMessage = conv.messages?.[0];
                                         return (
                                             <li key={conv.id}>
@@ -133,7 +148,11 @@ export default function ChatIndex({ conversations }: Props) {
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-start justify-between gap-2">
                                                             <p className="truncate font-medium">
-                                                                {otherUser.name}
+                                                                {otherUser
+                                                                    ?.name ??
+                                                                    t(
+                                                                        'common.unknown',
+                                                                    )}
                                                             </p>
                                                             <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
                                                                 {(conv.unread_count ??
