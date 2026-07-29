@@ -88,10 +88,10 @@ export function LocationIndicator() {
                 <div className="mb-1.5 border-b border-border/40 px-2.5 py-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                     {t('region.select_country_region')}
                 </div>
-                {REGIONS.map(({ code, labelKey, currency, flag }) => (
+                {REGIONS.map(({ code, labelKey, currency, flag, locale: regionLocale }) => (
                     <DropdownMenuItem
                         key={code}
-                        onClick={() => setRegion(code)}
+                        onClick={() => setRegion(code, regionLocale)}
                         className={`flex cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-xs ${region === code ? 'bg-accent font-medium text-accent-foreground' : ''}`}
                     >
                         <span className="flex items-center gap-2">

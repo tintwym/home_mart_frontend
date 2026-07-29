@@ -62,6 +62,18 @@
       "destination": "https://home-mart-backend.onrender.com/chat/:id/typing"
     },
     {
+      "source": "/region",
+      "destination": "https://home-mart-backend.onrender.com/region"
+    },
+    {
+      "source": "/locale",
+      "destination": "https://home-mart-backend.onrender.com/locale"
+    },
+    {
+      "source": "/currency",
+      "destination": "https://home-mart-backend.onrender.com/currency"
+    },
+    {
       "source": "/sanctum/csrf-cookie",
       "destination": "https://home-mart-backend.onrender.com/sanctum/csrf-cookie"
     },

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
 import { router, usePage } from '@inertiajs/react';
 import type { SharedCurrency, SharedData } from '@/types';
 import { useTranslations } from '@/hooks/use-translations';
@@ -15,7 +15,8 @@ interface LocalizationContextType {
         sellerRegion?: string | null,
     ) => string;
     setLocale: (code: string) => void;
-    setRegion: (code: string) => void;
+    /** Changing region also applies that region's language + currency on the server. */
+    setRegion: (code: string, localeHint?: string) => void;
 }
 
 const LocalizationContext = createContext<LocalizationContextType | undefined>(
@@ -42,11 +43,18 @@ export function LocalizationProvider({
     const { currency, currencies, formatPrice } = useCurrency();
     const region = props.region || 'US';
 
+    useEffect(() => {
+        if (typeof document !== 'undefined' && locale) {
+            document.documentElement.lang = locale;
+        }
+    }, [locale]);
+
     const setLocale = (code: string) => {
         router.post('/locale', { locale: code }, { preserveScroll: true });
     };
 
-    const setRegion = (code: string) => {
+    const setRegion = (code: string, _localeHint?: string) => {
+        // Backend sets locale + currency cookies from REGION_LOCALES / CURRENCIES.
         router.post('/region', { region: code }, { preserveScroll: true });
     };
 
