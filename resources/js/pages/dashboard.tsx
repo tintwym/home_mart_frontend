@@ -20,7 +20,6 @@ import {
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
-import { AdSlot } from '@/components/ad-slot';
 import { CurrencyFormatter } from '@/components/currency-formatter';
 import { ListingCard, ListingCardSkeleton } from '@/components/listing-card';
 import type { ListingCardListing } from '@/components/listing-card';
@@ -425,12 +424,6 @@ export default function Dashboard({ listings = [] }: Props) {
                         </div>
                     </motion.section>
                 )}
-
-                <AdSlot
-                    slotId="dashboard-above-listings"
-                    size="banner"
-                    className="mb-2"
-                />
 
                 {/* Quick Stats Row */}
                 <div className="grid gap-4 sm:grid-cols-3">
